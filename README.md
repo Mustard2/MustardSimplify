@@ -1,6 +1,8 @@
 # Mustard Simplify
 
-A scene simplifier for Blender to increase viewport performance
+A scene simplifier for Blender to increase viewport performance.
+
+The add-on essentially disables some scene/object features that affect Viewport performance with one click.
 
 ## How to install
 
