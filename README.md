@@ -1,4 +1,4 @@
-# Mustard-Simplify
+# Mustard Simplify
 
 A scene simplifier for Blender to increase viewport performance
 
