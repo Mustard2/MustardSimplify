@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 2),
+    "version": (0, 0, 3),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -536,20 +536,22 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             mod.show_viewport = status
             
             # Shape Keys
-            if settings.modifiers:
+            if settings.shape_keys and obj.type == "MESH":
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
-                    for sk in obj.data.shape_keys.key_blocks:
-                        add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, sk.mute])
-                        sk.mute = True if sk.value < 1e-5 else False
+                    if obj.data.shape_keys != None:
+                        for sk in obj.data.shape_keys.key_blocks:
+                            add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, sk.mute])
+                            sk.mute = True if sk.value < 1e-5 else False
                 else:
-                    for sk in obj.data.shape_keys.key_blocks:
-                        name, status = find_prop_status(obj.MustardSimplify_Status.shape_keys, sk)
-                        if name != "":
-                            sk.mute = status
+                    if obj.data.shape_keys != None:
+                        for sk in obj.data.shape_keys.key_blocks:
+                            name, status = find_prop_status(obj.MustardSimplify_Status.shape_keys, sk)
+                            if name != "":
+                                sk.mute = status
             
             # Normals Auto Smooth
-            if settings.normals_auto_smooth:
+            if settings.normals_auto_smooth and obj.type == "MESH":
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.normals_auto_smooth = obj.data.use_auto_smooth
                     obj.data.use_auto_smooth = False
