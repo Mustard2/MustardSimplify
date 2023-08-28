@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 6),
+    "version": (0, 0, 7),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -523,7 +523,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
     
     @classmethod
     def poll(cls, context):
-        return True
+        
+        scene = context.scene
+        settings = scene.MustardSimplify_Settings
+        
+        if not settings.simplify_status:
+            return settings.modifiers or settings.shape_keys or settings.physics or settings.drivers or settings.normals_auto_smooth
+        else:
+            return True
 
     def execute(self, context):
         
@@ -620,6 +627,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             if settings.normals_auto_smooth and obj.type == "MESH":
                 
                 if self.enable_simplify:
+                    status = obj.data.use_auto_smooth
                     obj.MustardSimplify_Status.normals_auto_smooth = obj.data.use_auto_smooth
                     obj.data.use_auto_smooth = False
                     if settings.debug:
@@ -627,7 +635,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 else:
                     obj.data.use_auto_smooth = obj.MustardSimplify_Status.normals_auto_smooth
                     if settings.debug:
-                        print("Normals Auto Smooth reverted to status: " + str(status) + ".")
+                        print("Normals Auto Smooth reverted to status: " + str(obj.data.use_auto_smooth) + ".")
         
         # SCENE
         if settings.physics:
@@ -639,7 +647,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     print("\n ----------- Scene: " + scene.name + " -----------")
                 
                 if self.enable_simplify:
-                    staus = scene.rigidbody_world.enabled
+                    status = scene.rigidbody_world.enabled
                     scene.MustardSimplify_Status.rigidbody_world = status
                     scene.rigidbody_world.enabled = False
                     if settings.debug:
