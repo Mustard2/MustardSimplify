@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 3),
+    "version": (0, 0, 5),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -49,6 +49,9 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     physics: bpy.props.BoolProperty(name="Physics",
                                         description="Disable Physics",
                                         default=True)
+    drivers: bpy.props.BoolProperty(name="Drivers",
+                                        description="Disable Drivers",
+                                        default=True)
     normals_auto_smooth: bpy.props.BoolProperty(name="Normals Auto Smooth",
                                         description="Disable Normals Auto Smooth",
                                         default=True)
@@ -56,10 +59,27 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     # UI Settings
     collapse_options: bpy.props.BoolProperty(name="Collapse",
                                         default=True)
+    collapse_exceptions: bpy.props.BoolProperty(name="Collapse",
+                                        default=True)
+    # Poll function for the selection of mesh only in pointer properties
+    def poll_exception(self, object):
+        
+        exceptions = bpy.context.scene.MustardSimplify_Exceptions.exceptions
+        exceptions = [x.exception for x in exceptions]
+        
+        return not object in exceptions
+    
+    exception_select: bpy.props.PointerProperty(type=bpy.types.Object,
+                                        poll=poll_exception,
+                                        name="",
+                                        description="")
     
     # Internal Settings
     simplify_fastnormals_status: bpy.props.BoolProperty(default=False)
     simplify_status: bpy.props.BoolProperty(default=False)
+    
+    # Modifiers to not simplify by default
+    modifiers_ignore = ["ARMATURE", "HOOK"]
             
 bpy.utils.register_class(MustardSimplify_Settings)
 bpy.types.Scene.MustardSimplify_Settings = bpy.props.PointerProperty(type=MustardSimplify_Settings)
@@ -93,12 +113,23 @@ class MustardSimplify_ObjectStatus(bpy.types.PropertyGroup):
 bpy.utils.register_class(MustardSimplify_ObjectStatus)
 bpy.types.Object.MustardSimplify_Status = bpy.props.PointerProperty(type=MustardSimplify_ObjectStatus)
 
-# Class with all the settings variables
+# Class to store the scene status
 class MustardSimplify_SceneStatus(bpy.types.PropertyGroup):
     rigidbody_world: bpy.props.BoolProperty(default=False)
             
 bpy.utils.register_class(MustardSimplify_SceneStatus)
 bpy.types.Scene.MustardSimplify_Status = bpy.props.PointerProperty(type=MustardSimplify_SceneStatus)
+
+# Classes to manage exceptions
+class MustardSimplify_Exception(bpy.types.PropertyGroup):
+    exception: bpy.props.PointerProperty(type=bpy.types.Object)
+bpy.utils.register_class(MustardSimplify_Exception)
+
+class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
+    exceptions: bpy.props.CollectionProperty(type=MustardSimplify_Exception)
+            
+bpy.utils.register_class(MustardSimplify_Exceptions)
+bpy.types.Scene.MustardSimplify_Exceptions = bpy.props.PointerProperty(type=MustardSimplify_Exceptions)
 
 # ------------------------------------------------------------------------
 #    Normal Maps Optimizer (thanks to theoldben)
@@ -511,17 +542,35 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     return el.name, el.status
             return "", None
         
-        settings = bpy.context.scene.MustardSimplify_Settings
+        scene = context.scene
+        settings = scene.MustardSimplify_Settings
         
         # OBJECTS
-        objects = bpy.data.objects
         
-        for obj in objects:
+        # Create list of exception Objects
+        except_objects = []
+        exceptions = scene.MustardSimplify_Exceptions.exceptions
+        for excpt in exceptions:
+            except_objects.append(excpt.exception)
+        
+        objects = [x for x in bpy.data.objects if not x in except_objects]
+        
+        # Create list of modifiers to simplify
+        if settings.modifiers:
+            
+            chosen_mods = scene.MustardSimplify_SetModifiers.modifiers
+            
+            # If the user hasn't used the Modifiers menu, use the default settings
+            if not len(chosen_mods):
+                modifiers_ignore = settings.modifiers_ignore
+            else:
+                modifiers_ignore = [x.name for x in chosen_mods if not x.simplify]
+                
+        for obj in [x for x in objects if not x in except_objects]:
             
             # Modifiers
             if settings.modifiers:
                 
-                modifiers_ignore = ["ARMATURE"]
                 modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
                 
                 if self.enable_simplify:
@@ -569,6 +618,39 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 else:
                     context.scene.rigidbody_world.enabled = context.scene.MustardSimplify_Status.rigidbody_world
         
+        # DRIVERS
+        if settings.drivers:
+            collections = ["scenes","objects","meshes","materials","textures","speakers",
+                           "worlds","curves","armatures","particles","lattices","shape_keys","lights","cameras"]
+            for col in collections:
+                collection = eval("bpy.data.%s"%col)
+                if col == "objects":
+                    collection = objects
+                for ob in collection:
+                    if ob.animation_data is not None:
+                        for driver in ob.animation_data.drivers:
+                            dp = driver.data_path
+                            pp = dp
+                            if dp.find("[") != 0:pp = ".%s"%dp
+                            resolved = False
+                            try:
+                                dob = ob.path_resolve(dp)
+                                resolved = True
+                            except:
+                                dob = None
+                                
+                            if not resolved:
+                                try:
+                                    dob = eval('bpy.data.%s["%s"]%s' % (col,ob.name,pp))
+                                    resolved = True
+                                except:
+                                    dob = None
+                                
+                            idx = driver.array_index
+                            if dob is not None and (isinstance(dob,Vector) or isinstance(dob,Color)):
+                                pp = "%s[%d]"%(pp,idx)
+                            driver.mute = self.enable_simplify
+        
         if self.enable_simplify:
             self.report({'INFO'}, 'Mustard Simplify - Simplify Enabled.')
         else:
@@ -578,6 +660,228 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         self.enable_simplify = not self.enable_simplify
         
         return {'FINISHED'}
+
+# ------------------------------------------------------------------------
+#    Modifiers Select
+# ------------------------------------------------------------------------
+
+# Classes to manage exceptions
+class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(default="")
+    disp_name: bpy.props.StringProperty(default="")
+    icon: bpy.props.StringProperty(default="")
+    simplify: bpy.props.BoolProperty(default=True)
+bpy.utils.register_class(MustardSimplify_SetModifier)
+
+class MustardSimplify_SetModifiers(bpy.types.PropertyGroup):
+    modifiers: bpy.props.CollectionProperty(type=MustardSimplify_SetModifier)
+bpy.utils.register_class(MustardSimplify_SetModifiers)
+bpy.types.Scene.MustardSimplify_SetModifiers = bpy.props.PointerProperty(type=MustardSimplify_SetModifiers)
+
+class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
+    """Select the modifiers affected by the simplification process"""
+    bl_idname = "mustard_simplify.menu_modifiers_select"
+    bl_label = "Select Modifiers to Simplify"
+    
+    modifiers: bpy.props.PointerProperty(type=MustardSimplify_SetModifiers)
+    
+    @classmethod
+    def poll(cls, context):
+        # Enable operator only when the scene is not simplified
+        settings = bpy.context.scene.MustardSimplify_Settings
+        return not settings.simplify_status
+ 
+    def execute(self, context):
+        
+        return{'FINISHED'}
+    
+    def invoke(self, context, event):
+        
+        def add_modifier (collection, name, disp_name, icon, simplify):
+            for el in collection:
+                if el.name == name:
+                    return False
+            add_item = collection.add()
+            add_item.name = name
+            add_item.disp_name = disp_name
+            add_item.icon = icon
+            add_item.simplify = simplify
+            return True
+        
+        scene = bpy.context.scene
+        settings = scene.MustardSimplify_Settings
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        
+        # Extract type of modifiers
+        rna = bpy.ops.object.modifier_add.get_rna_type()
+        mods_list = rna.bl_rna.properties['type'].enum_items.keys()
+        
+        # Make the list
+        # This is done at run-time, so it should be version agnostic
+        if len(mods_list) != len(modifiers):
+            
+            modifiers.clear()
+        
+            for m in mods_list:
+                
+                # Change the displayed name
+                disp_name = m.replace("_", " ")
+                disp_name = disp_name.title()
+                
+                icon = "MOD_"+m
+                simplify = True
+                
+                # Manage single exceptions
+                if m in ["MESH_CACHE", "MESH_SEQUENCE_CACHE", "LAPLACIANDEFORM", "MESH_DEFORM", "SURFACE_DEFORM", "SURFACE"]:
+                    icon = "MOD_MESHDEFORM"
+                if m in ["LAPLACIANDEFORM"]:
+                    icon = "MOD_MESHDEFORM"
+                    disp_name = "Laplacian Deform"
+                elif m in ["NORMAL_EDIT",  "WEIGHTED_NORMAL"]:
+                    icon = "MOD_NORMALEDIT"
+                elif m in ["UV_PROJECT",  "UV_WARP"]:
+                    icon = "MOD_UVPROJECT"
+                elif m in ['VERTEX_WEIGHT_EDIT', 'VERTEX_WEIGHT_MIX', 'VERTEX_WEIGHT_PROXIMITY']:
+                    icon = "MOD_VERTEX_WEIGHT"
+                elif m in ['DECIMATE']:
+                    icon = "MOD_DECIM"
+                elif m in ['EDGE_SPLIT']:
+                    icon = "MOD_EDGESPLIT"
+                elif m in ['NODES']:
+                    icon = "GEOMETRY_NODES"
+                elif m in ['MULTIRES']:
+                    icon = "MOD_MULTIRES"
+                elif m in ["MESH_TO_VOLUME", "VOLUME_TO_MESH", "VOLUME_DISPLACE"]:
+                    icon = "VOLUME_DATA"
+                elif m in ["WELD"]:
+                    icon = "AUTOMERGE_OFF"
+                elif m in ['SIMPLE_DEFORM']:
+                    icon = "MOD_SIMPLEDEFORM"
+                elif m in ['SMOOTH', 'CORRECTIVE_SMOOTH']:
+                    icon = "MOD_SMOOTH"
+                if m in ["LAPLACIANSMOOTH"]:
+                    icon = "MOD_SMOOTH"
+                    disp_name = "Laplacian Smooth"
+                elif m in ["HOOK"]:
+                    icon = m
+                elif m in ["COLLISION"]:
+                    icon = "MOD_PHYSICS"
+                elif m in ["DYNAMIC_PAINT"]:
+                    icon = "MOD_DYNAMICPAINT"
+                elif m in ["PARTICLE_SYSTEM"]:
+                    icon = "MOD_PARTICLES"
+                elif m in ["SOFT_BODY"]:
+                    icon = "MOD_SOFT"
+                
+                if m in settings.modifiers_ignore:
+                    simplify = False
+                
+                add_modifier(modifiers, m, disp_name, icon, simplify)
+        
+        return context.window_manager.invoke_props_dialog(self, width = 800)
+            
+    def draw(self, context):
+        
+        scene = bpy.context.scene
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        settings = bpy.context.scene.MustardSimplify_Settings
+        
+        layout = self.layout
+        
+        row = layout.row()
+        col = row.column()
+        idx = 0
+        
+        for m in modifiers:
+            if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
+                col = row.column()
+            row2 = col.row()
+            row2.prop(m, 'simplify', text="")
+            # Avoid missing icon error
+            try:
+                row2.label(text=m.disp_name, icon=m.icon)
+            except:
+                row2.label(text=m.disp_name, icon="BLANK1")
+        
+# ------------------------------------------------------------------------
+#    Exceptions
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_AddException(bpy.types.Operator):
+    """Add Object to the exceptions list"""
+    bl_idname = "mustard_simplify.add_exception"
+    bl_label = "Add Object"
+    bl_options = {'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        # Enable operator only when the scene is not simplified
+        settings = bpy.context.scene.MustardSimplify_Settings
+        return not settings.simplify_status
+
+    def execute(self, context):
+        
+        def add_exception (collection, obj):
+            for el in collection:
+                if el.exception == obj:
+                    return False
+            add_item = collection.add()
+            add_item.exception = obj
+            return True
+        
+        def find_exception (collection, mod):
+            for el in collection:
+                if el.exception == obj:
+                    return el.exception
+            return None
+        
+        settings = bpy.context.scene.MustardSimplify_Settings
+        scene = context.scene
+        
+        res = add_exception(scene.MustardSimplify_Exceptions.exceptions, settings.exception_select)
+        if not res:
+            self.report({'ERROR'}, 'Mustard Simplify - Object already added to exceptions.')
+        
+        return {'FINISHED'}
+
+class MUSTARDSIMPLIFY_OT_RemoveException(bpy.types.Operator):
+    """Remove Object to the exceptions list"""
+    bl_idname = "mustard_simplify.remove_exception"
+    bl_label = "Remove Object"
+    bl_options = {'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        return True
+    
+    def execute(self, context):
+        
+        scene = context.scene
+        index = scene.mustardsimplify_exception_uilist_index
+        uilist = scene.MustardSimplify_Exceptions.exceptions
+        
+        uilist.remove(index)
+        index = min(max(0, index - 1), len(uilist) - 1)
+        scene.mustardsimplify_exception_uilist_index = index
+        
+        return{'FINISHED'}
+
+class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
+    """UIList for exceptions."""
+
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        
+        scene = context.scene
+        settings = scene.MustardSimplify_Settings
+        
+        # Make sure your code supports all 3 layout types
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.prop(item.exception, 'name', text ="", icon ="OUTLINER_OB_" + item.exception.type, emboss=False, translate=False)
+                
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.prop(item.exception, 'name', text ="", icon ="OUTLINER_OB_" + item.exception.type, emboss=False, translate=False)
 
 # ------------------------------------------------------------------------
 #    UI
@@ -595,15 +899,16 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
 
     def draw(self, context):
         
+        scene = context.scene
         layout = self.layout
-        settings = context.scene.MustardSimplify_Settings
+        settings = scene.MustardSimplify_Settings
         
         layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene" if not settings.simplify_status else "Un-Simplify Scene")
-        if settings.simplify_fastnormals_status and context.scene.render.engine == "CYCLES":
+        if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
             layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
             col = layout.column()
-            col.enabled = not context.scene.render.engine == "CYCLES"
+            col.enabled = not scene.render.engine == "CYCLES"
             col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals")
         
         box=layout.box()
@@ -613,10 +918,31 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         if not settings.collapse_options:
             col = box.column()
             col.enabled = not settings.simplify_status
-            col.prop(settings,"modifiers")
+            row = col.row()
+            row.prop(settings,"modifiers")
+            row.operator(MUSTARDSIMPLIFY_OT_MenuModifiersSelect.bl_idname, icon="PREFERENCES", text="")
             col.prop(settings,"shape_keys")
+            col.prop(settings,"drivers")
             col.prop(settings,"physics")
             col.prop(settings,"normals_auto_smooth")
+        
+        box=layout.box()
+        row = box.row()
+        row.prop(settings, 'collapse_exceptions', text="", icon="RIGHTARROW" if settings.collapse_exceptions else "DOWNARROW_HLT", emboss=False)
+        row.label(text="Exceptions")
+        if not settings.collapse_exceptions:
+            
+            row = box.row()
+            row.enabled = not settings.simplify_status
+            row.template_list("MUSTARDSIMPLIFY_UL_Exceptions_UIList", "The_List", scene.MustardSimplify_Exceptions,
+                            "exceptions", scene, "mustardsimplify_exception_uilist_index")
+            col = row.column(align=True)
+            col.operator(MUSTARDSIMPLIFY_OT_RemoveException.bl_idname, icon = "REMOVE", text = "")
+            
+            row = box.row()
+            row.enabled = not settings.simplify_status
+            row.prop_search(settings, "exception_select", scene, "objects", text = "")
+            row.operator(MUSTARDSIMPLIFY_OT_AddException.bl_idname, text="", icon="ADD")
 
 class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
     bl_idname = "MUSTARDSIMPLIFY_PT_Settings"
@@ -641,6 +967,10 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
 classes = (
     MUSTARDSIMPLIFY_OT_FastNormals,
     MUSTARDSIMPLIFY_OT_SimplifyScene,
+    MUSTARDSIMPLIFY_OT_MenuModifiersSelect,
+    MUSTARDSIMPLIFY_OT_AddException,
+    MUSTARDSIMPLIFY_OT_RemoveException,
+    MUSTARDSIMPLIFY_UL_Exceptions_UIList,
     MUSTARDSIMPLIFY_PT_Options,
     MUSTARDSIMPLIFY_PT_Settings,
 )
@@ -650,6 +980,9 @@ def register():
     from bpy.utils import register_class
     for cls in classes:
         register_class(cls)
+    
+    # Indexes for UI Lists
+    bpy.types.Scene.mustardsimplify_exception_uilist_index = IntProperty(name = "", default = 0)
 
 def unregister():
     
