@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 5),
+    "version": (0, 0, 6),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -31,10 +31,10 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     
     # Main Settings definitions
     # UI definitions
-    ms_advanced: bpy.props.BoolProperty(name="Advanced Options",
+    advanced: bpy.props.BoolProperty(name="Advanced Options",
                                         description="Unlock advanced options",
                                         default=False)
-    ms_debug: bpy.props.BoolProperty(name="Debug mode",
+    debug: bpy.props.BoolProperty(name="Debug mode",
                                         description="Unlock debug mode.\nThis will generate more messaged in the console.\nEnable it only if you encounter problems, as it might degrade general Blender performance",
                                         default=False)
     
@@ -565,8 +565,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 modifiers_ignore = settings.modifiers_ignore
             else:
                 modifiers_ignore = [x.name for x in chosen_mods if not x.simplify]
-                
+        
+        if settings.debug:
+            print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
+        
         for obj in [x for x in objects if not x in except_objects]:
+            
+            if settings.debug:
+                print("\n ----------- Object: " + obj.name + " -----------")
             
             # Modifiers
             if settings.modifiers:
@@ -576,52 +582,79 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.modifiers.clear()
                     for mod in modifiers:
-                        add_prop_status(obj.MustardSimplify_Status.modifiers, [mod.name, mod.show_viewport])
+                        status = mod.show_viewport
+                        add_prop_status(obj.MustardSimplify_Status.modifiers, [mod.name, status])
                         mod.show_viewport = False
+                        if settings.debug:
+                            print("Modifier " + mod.name + " disabled (previous viewport_hide: " + str(status) + ").")
                 else:
                     for mod in modifiers:
                         name, status = find_prop_status(obj.MustardSimplify_Status.modifiers, mod)
                         if name != "":
                             mod.show_viewport = status
+                            if settings.debug:
+                                print("Modifier " + mod.name + " reverted to viewport_hide: " + str(status) + ".")
             
             # Shape Keys
             if settings.shape_keys and obj.type == "MESH":
+                
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
                     if obj.data.shape_keys != None:
                         for sk in obj.data.shape_keys.key_blocks:
-                            add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, sk.mute])
+                            status = sk.mute
+                            add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
                             sk.mute = True if sk.value < 1e-5 else False
+                            if settings.debug:
+                                print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
                 else:
                     if obj.data.shape_keys != None:
                         for sk in obj.data.shape_keys.key_blocks:
                             name, status = find_prop_status(obj.MustardSimplify_Status.shape_keys, sk)
                             if name != "":
                                 sk.mute = status
+                                if settings.debug:
+                                    print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
             
             # Normals Auto Smooth
             if settings.normals_auto_smooth and obj.type == "MESH":
+                
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.normals_auto_smooth = obj.data.use_auto_smooth
                     obj.data.use_auto_smooth = False
+                    if settings.debug:
+                        print("Normals Auto Smooth disabled (previous status: " + str(status) + ").")
                 else:
                     obj.data.use_auto_smooth = obj.MustardSimplify_Status.normals_auto_smooth
+                    if settings.debug:
+                        print("Normals Auto Smooth reverted to status: " + str(status) + ".")
         
         # SCENE
         if settings.physics:
             
             # Rigid Body World
             if context.scene.rigidbody_world:
+                
+                if settings.debug:
+                    print("\n ----------- Scene: " + scene.name + " -----------")
+                
                 if self.enable_simplify:
-                    context.scene.MustardSimplify_Status.rigidbody_world = context.scene.rigidbody_world.enabled
-                    context.scene.rigidbody_world.enabled = False
+                    staus = scene.rigidbody_world.enabled
+                    scene.MustardSimplify_Status.rigidbody_world = status
+                    scene.rigidbody_world.enabled = False
+                    if settings.debug:
+                        print("Rigid Body World disabled (previous status: " + str(status) + ").")
                 else:
-                    context.scene.rigidbody_world.enabled = context.scene.MustardSimplify_Status.rigidbody_world
+                    scene.rigidbody_world.enabled = scene.MustardSimplify_Status.rigidbody_world
+                    if settings.debug:
+                        print("Rigid Body World disabled reverted to status: " + str(scene.rigidbody_world.enabled) + ").")
         
         # DRIVERS
         if settings.drivers:
             collections = ["scenes","objects","meshes","materials","textures","speakers",
                            "worlds","curves","armatures","particles","lattices","shape_keys","lights","cameras"]
+            num_drivers = 0
+            
             for col in collections:
                 collection = eval("bpy.data.%s"%col)
                 if col == "objects":
@@ -650,14 +683,23 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             if dob is not None and (isinstance(dob,Vector) or isinstance(dob,Color)):
                                 pp = "%s[%d]"%(pp,idx)
                             driver.mute = self.enable_simplify
+                            num_drivers = num_drivers + 1
+            
+            if settings.debug and self.enable_simplify:
+                print("\n ----------- Drivers disabled: " + str(num_drivers) + " -----------")
+            if settings.debug and not self.enable_simplify:
+                print("\n ----------- Drivers reverted: " + str(num_drivers) + " -----------")
         
-        if self.enable_simplify:
-            self.report({'INFO'}, 'Mustard Simplify - Simplify Enabled.')
-        else:
-            self.report({'INFO'}, 'Mustard Simplify - Simplify Disabled.')
+        if settings.debug:
+            print("\n")
         
         settings.simplify_status = self.enable_simplify
         self.enable_simplify = not self.enable_simplify
+        
+        if not self.enable_simplify:
+            self.report({'INFO'}, 'Mustard Simplify - Simplify Enabled.')
+        else:
+            self.report({'INFO'}, 'Mustard Simplify - Simplify Disabled.')
         
         return {'FINISHED'}
 
@@ -777,6 +819,9 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                     simplify = False
                 
                 add_modifier(modifiers, m, disp_name, icon, simplify)
+                
+                if settings.debug:
+                    print("Mustard Simplify - Modifiers List generated")
         
         return context.window_manager.invoke_props_dialog(self, width = 800)
             
@@ -787,8 +832,9 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         settings = bpy.context.scene.MustardSimplify_Settings
         
         layout = self.layout
+        box = layout.box()
         
-        row = layout.row()
+        row = box.row()
         col = row.column()
         idx = 0
         
@@ -903,13 +949,13 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         layout = self.layout
         settings = scene.MustardSimplify_Settings
         
-        layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene" if not settings.simplify_status else "Un-Simplify Scene")
+        layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene" if not settings.simplify_status else "Un-Simplify Scene", icon="MOD_SIMPLIFY")
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
             layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
             col = layout.column()
             col.enabled = not scene.render.engine == "CYCLES"
-            col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals")
+            col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
         
         box=layout.box()
         row = box.row()
@@ -957,8 +1003,8 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         box=layout.box()
         box.label(text="Main Settings", icon="SETTINGS")
         col = box.column()
-        col.prop(settings,"ms_advanced")
-        col.prop(settings,"ms_debug")
+        #col.prop(settings,"advanced")
+        col.prop(settings,"debug")
 
 # ------------------------------------------------------------------------
 #    Register
