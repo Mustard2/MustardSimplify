@@ -2,6 +2,8 @@
 
 A scene simplifier for Blender to increase viewport performance.
 
+<img src="https://i.ibb.co/MhDxJ28/F4p-EU92-Xs-AE4-Qzw.jpg" border="0" />
+
 The add-on essentially disables some scene/object features that affect Viewport performance with one click.
 
 It acts on the Objects in the scene non-destructively (no mesh is edited in any way) and remembering the settings before enabling Simplify. That is, disabling Simplify, the Object (modifier viewport visibility status shape key mute status, etc..) will be reverted to pre-Simplify status.
