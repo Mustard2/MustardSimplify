@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 7),
+    "version": (0, 0, 8),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -702,9 +702,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             print("\n")
         
         settings.simplify_status = self.enable_simplify
-        self.enable_simplify = not self.enable_simplify
         
-        if not self.enable_simplify:
+        if self.enable_simplify:
             self.report({'INFO'}, 'Mustard Simplify - Simplify Enabled.')
         else:
             self.report({'INFO'}, 'Mustard Simplify - Simplify Disabled.')
@@ -957,7 +956,11 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         layout = self.layout
         settings = scene.MustardSimplify_Settings
         
-        layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene" if not settings.simplify_status else "Un-Simplify Scene", icon="MOD_SIMPLIFY")
+        if settings.simplify_status:
+            op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Un-Simplify Scene", icon="MOD_SIMPLIFY")
+        else:
+            op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene", icon="MOD_SIMPLIFY")
+        op.enable_simplify = not settings.simplify_status
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
             layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
