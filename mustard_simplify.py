@@ -241,7 +241,7 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         return {'FINISHED'}
 
 def default_custom_nodes():
-    use_new_nodes = (bpy.app.version >= (2, 81))
+    use_new_nodes = bpy.app.version >= (2, 81) and bpy.app.version < (3, 2, 0)
 
     group = bpy.data.node_groups.new('Normal Map Optimized', 'ShaderNodeTree')
 
@@ -356,12 +356,12 @@ def default_custom_nodes():
     node.inputs[0].default_value = 1.0  # Strength
     node.inputs[1].default_value = 1000.0  # Distance
     node.inputs[2].default_value = 1.0  # Height
-    #if use_new_nodes:
-        #node.inputs[3].default_value = 1.0  # Height_dx
-        #node.inputs[4].default_value = 1.0  # Height_dy
-        #node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
-    #else:
-        #node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
+    if use_new_nodes:
+        node.inputs[3].default_value = 1.0  # Height_dx
+        node.inputs[4].default_value = 1.0  # Height_dy
+        node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
+    else:
+        node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
     # for inp in node.inputs:
     #     if inp.name not in ['Height']:
     #         node.inputs.remove(inp)
