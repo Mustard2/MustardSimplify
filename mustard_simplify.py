@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 8),
+    "version": (0, 0, 9),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -40,18 +40,32 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     
     
     # Settings to simplify
+    # Modifiers
     modifiers: bpy.props.BoolProperty(name="Modifiers",
                                         description="Disable modifiers",
                                         default=True)
+    # Shape Keys
     shape_keys: bpy.props.BoolProperty(name="Shape Keys",
                                         description="Mute un-used shape keys (value different from 0)",
                                         default=True)
+    shape_keys_disable_not_null: bpy.props.BoolProperty(name="Disable when Null",
+                                        description="Disable only Shape Keys with value equal to 0.\nThis applies only to non-driven Shape Keys (i.e., without drivers or animation keyframes)",
+                                        default=True)
+    shape_keys_disable_with_drivers: bpy.props.BoolProperty(name="Disable if with Drivers",
+                                        description="Disable Shape Keys driven by drivers.\nThis is not affected by Disable when Null setting",
+                                        default=True)
+    shape_keys_disable_with_keyframes: bpy.props.BoolProperty(name="Disable if with Animation Key-Frames",
+                                        description="Disable Shape Keys driven by animation keyframes regardless of other settings.\nThis is not affected by Disable when Null setting",
+                                        default=False)
+    # Physics
     physics: bpy.props.BoolProperty(name="Physics",
                                         description="Disable Physics",
                                         default=True)
+    # Drivers
     drivers: bpy.props.BoolProperty(name="Drivers",
                                         description="Disable Drivers",
                                         default=True)
+    # Normals Auto Smooth
     normals_auto_smooth: bpy.props.BoolProperty(name="Normals Auto Smooth",
                                         description="Disable Normals Auto Smooth",
                                         default=True)
@@ -549,6 +563,22 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     return el.name, el.status
             return "", None
         
+        def has_keyframe(ob, attr):
+            anim = ob.animation_data
+            if anim is not None and anim.action is not None:
+                for fcu in anim.action.fcurves:
+                    if fcu.data_path == attr:
+                        return len(fcu.keyframe_points) > 0
+            return False
+        
+        def has_driver(ob, attr):
+            anim = ob.animation_data
+            if anim is not None and anim.drivers is not None:
+                for fcu in anim.drivers:
+                    if fcu.data_path == attr:
+                        return True
+            return False
+        
         scene = context.scene
         settings = scene.MustardSimplify_Settings
         
@@ -611,7 +641,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         for sk in obj.data.shape_keys.key_blocks:
                             status = sk.mute
                             add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
-                            sk.mute = True if sk.value < 1e-5 else False
+                            attr = 'key_blocks["'+sk.name+'"].value'
+                            value_bool = True if sk.value < 1e-5 else False
+                            if has_driver(obj.data.shape_keys, attr):
+                                sk.mute = settings.shape_keys_disable_with_drivers
+                            elif has_keyframe(obj.data.shape_keys, attr):
+                                sk.mute = settings.shape_keys_disable_with_keyframes
+                            else:
+                                sk.mute = value_bool if settings.shape_keys_disable_not_null else True
                             if settings.debug:
                                 print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
                 else:
@@ -732,8 +769,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
     bl_idname = "mustard_simplify.menu_modifiers_select"
     bl_label = "Select Modifiers to Simplify"
     
-    modifiers: bpy.props.PointerProperty(type=MustardSimplify_SetModifiers)
-    
     @classmethod
     def poll(cls, context):
         # Enable operator only when the scene is not simplified
@@ -843,7 +878,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         
         row = box.row()
         col = row.column()
-        idx = 0
         
         for m in modifiers:
             if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
@@ -855,7 +889,50 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 row2.label(text=m.disp_name, icon=m.icon)
             except:
                 row2.label(text=m.disp_name, icon="BLANK1")
+
+# ------------------------------------------------------------------------
+#    Shape Keys Settings
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings(bpy.types.Operator):
+    """Modify Shape Keys settings"""
+    bl_idname = "mustard_simplify.menu_shape_keys_settings"
+    bl_label = "Shape Keys Settings"
+    
+    @classmethod
+    def poll(cls, context):
+        # Enable operator only when the scene is not simplified
+        settings = bpy.context.scene.MustardSimplify_Settings
+        return not settings.simplify_status
+ 
+    def execute(self, context):
         
+        return{'FINISHED'}
+    
+    def invoke(self, context, event):
+        
+        return context.window_manager.invoke_props_dialog(self, width = 400)
+            
+    def draw(self, context):
+        
+        scene = bpy.context.scene
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        settings = bpy.context.scene.MustardSimplify_Settings
+        
+        layout = self.layout
+        
+        box = layout.box()
+        box.label(text="Global Settings", icon="SHAPEKEY_DATA")
+        col = box.column()
+        col.prop(settings, 'shape_keys_disable_not_null')
+        
+        box = layout.box()
+        box.label(text="Driven Shape-Keys", icon="DRIVER")
+        col = box.column()
+        col.prop(settings, 'shape_keys_disable_with_drivers')
+        col.prop(settings, 'shape_keys_disable_with_keyframes')
+        
+
 # ------------------------------------------------------------------------
 #    Exceptions
 # ------------------------------------------------------------------------
@@ -973,12 +1050,14 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         row.prop(settings, 'collapse_options', text="", icon="RIGHTARROW" if settings.collapse_options else "DOWNARROW_HLT", emboss=False)
         row.label(text="Options")
         if not settings.collapse_options:
-            col = box.column()
+            col = box.column(align=True)
             col.enabled = not settings.simplify_status
             row = col.row()
             row.prop(settings,"modifiers")
             row.operator(MUSTARDSIMPLIFY_OT_MenuModifiersSelect.bl_idname, icon="PREFERENCES", text="")
-            col.prop(settings,"shape_keys")
+            row = col.row()
+            row.prop(settings,"shape_keys")
+            row.operator(MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings.bl_idname, icon="PREFERENCES", text="")
             col.prop(settings,"drivers")
             col.prop(settings,"physics")
             col.prop(settings,"normals_auto_smooth")
@@ -1025,6 +1104,7 @@ classes = (
     MUSTARDSIMPLIFY_OT_FastNormals,
     MUSTARDSIMPLIFY_OT_SimplifyScene,
     MUSTARDSIMPLIFY_OT_MenuModifiersSelect,
+    MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings,
     MUSTARDSIMPLIFY_OT_AddException,
     MUSTARDSIMPLIFY_OT_RemoveException,
     MUSTARDSIMPLIFY_UL_Exceptions_UIList,
