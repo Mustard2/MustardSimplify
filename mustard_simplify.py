@@ -170,6 +170,7 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         return (bpy.data.materials or bpy.data.node_groups)
 
     def execute(self, context):
+        
         def mirror(new, old):
             """Copy attributes of the old node to the new node"""
             new.parent = old.parent
@@ -209,13 +210,13 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
             if not group:
                 return
 
-            for node in nodes:
+            for node in reversed(nodes):
                 new = None
-                if self.custom:
+                if self.custom:# Setting up the GROUP NormalMap GroupNode
                     if isinstance(node, bpy.types.ShaderNodeNormalMap):
                         new = nodes.new(type='ShaderNodeGroup')
                         new.node_tree = group
-                else:
+                else:# Setting up the NORMAL NormalMap Node
                     if isinstance(node, bpy.types.ShaderNodeGroup):
                         if node.node_tree == group:
                             new = nodes.new(type='ShaderNodeNormalMap')
@@ -223,6 +224,29 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
                 if new:
                     name = node.name
                     mirror(new, node)
+                    
+                    if isinstance(node, bpy.types.ShaderNodeNormalMap):
+                        uvNode = nodes.new('ShaderNodeUVMap')
+                        uvNode.uv_map = node.uv_map
+                        uvNode.name = node.name+" -UV-"
+                        uvNode.parent = new.parent
+                        uvNode.mute = True
+                        uvNode.hide = True
+                        uvNode.select = False
+                        uvNode.location = Vector((new.location.x-216.0011, new.location.y-9.06744))
+                        uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs[2])
+                    else:
+                        try:
+                            for input in node.inputs:
+                                if input and isinstance(input, bpy.types.NodeSocketVector) and input.is_linked:
+                                    if isinstance(input.links[0].from_node, bpy.types.ShaderNodeUVMap):
+                                        uvNode = input.links[0].from_node
+                            new.uv_map = uvNode.uv_map
+                            nodes.remove(uvNode)
+                        except:
+                            print("Mustard Simplify - Could not restore UV before using Fast Normals")
+                            pass
+                    
                     nodes.remove(node)
                     new.name = name
 
@@ -236,7 +260,6 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         
         settings = bpy.context.scene.MustardSimplify_Settings
         settings.simplify_fastnormals_status = self.custom
-        self.custom = not self.custom
         
         return {'FINISHED'}
 
@@ -255,10 +278,13 @@ def default_custom_nodes():
     input.max_value = 1.0
     input = group.inputs.new('NodeSocketColor', 'Color')
     input.default_value = ((0.5, 0.5, 1.0, 1.0))
+    
+    # Input UV as Backup
+    input = group.inputs.new('NodeSocketVector', 'UV')
 
     # Output
     group.outputs.new('NodeSocketVector', 'Normal')
-
+    
     # Add Nodes
     frame = nodes.new('NodeFrame')
     frame.name = 'Matrix * Normal Map'
@@ -1050,11 +1076,12 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
             op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene", icon="MOD_SIMPLIFY")
         op.enable_simplify = not settings.simplify_status
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
-            layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
+            op2 = layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
             col = layout.column()
             col.enabled = not scene.render.engine == "CYCLES"
-            col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+            op2 = col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+        op2.custom = not settings.simplify_fastnormals_status
         
         box=layout.box()
         row = box.row()
