@@ -228,14 +228,14 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
                     if isinstance(node, bpy.types.ShaderNodeNormalMap):
                         uvNode = nodes.new('ShaderNodeUVMap')
                         uvNode.uv_map = node.uv_map
-                        uvNode.name = node.name+" -UV-"
+                        uvNode.name = node.name+" UV"
                         uvNode.parent = new.parent
                         uvNode.mute = True
                         uvNode.hide = True
                         uvNode.select = False
-                        uvNode.location = Vector((new.location.x-216.0011, new.location.y-9.06744))
+                        uvNode.location = Vector((new.location.x, new.location.y-150.))
                         uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs[2])
-                    else:
+                    else:c
                         try:
                             for input in node.inputs:
                                 if input and isinstance(input, bpy.types.NodeSocketVector) and input.is_linked:
