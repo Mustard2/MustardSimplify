@@ -212,11 +212,11 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
 
             for node in reversed(nodes):
                 new = None
-                if self.custom:# Setting up the GROUP NormalMap GroupNode
+                if self.custom:
                     if isinstance(node, bpy.types.ShaderNodeNormalMap):
                         new = nodes.new(type='ShaderNodeGroup')
                         new.node_tree = group
-                else:# Setting up the NORMAL NormalMap Node
+                else:
                     if isinstance(node, bpy.types.ShaderNodeGroup):
                         if node.node_tree == group:
                             new = nodes.new(type='ShaderNodeNormalMap')
