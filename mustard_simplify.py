@@ -48,14 +48,17 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     shape_keys: bpy.props.BoolProperty(name="Shape Keys",
                                         description="Mute un-used shape keys (value different from 0)",
                                         default=True)
-    shape_keys_disable_not_null: bpy.props.BoolProperty(name="Disable when Null",
+    shape_keys_disable_not_null: bpy.props.BoolProperty(name="Disable only when Null",
                                         description="Disable only Shape Keys with value equal to 0.\nThis applies only to non-driven Shape Keys (i.e., without drivers or animation keyframes)",
                                         default=True)
     shape_keys_disable_with_drivers: bpy.props.BoolProperty(name="Disable if with Drivers",
-                                        description="Disable Shape Keys driven by drivers.\nThis is not affected by Disable when Null setting",
+                                        description="Disable Shape Keys driven by drivers",
                                         default=True)
+    shape_keys_disable_with_drivers_not_null: bpy.props.BoolProperty(name="Disable only when Null",
+                                        description="Disable Shape Keys driven by drivers only when null",
+                                        default=False)
     shape_keys_disable_with_keyframes: bpy.props.BoolProperty(name="Disable if with Animation Key-Frames",
-                                        description="Disable Shape Keys driven by animation keyframes regardless of other settings.\nThis is not affected by Disable when Null setting",
+                                        description="Disable Shape Keys driven by animation keyframes regardless of other settings.\nThis is not affected by Disable when Null setting: if the setting is on, these Shape Keys are muted regardless of their value",
                                         default=False)
     # Physics
     physics: bpy.props.BoolProperty(name="Physics",
@@ -644,13 +647,16 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             attr = 'key_blocks["'+sk.name+'"].value'
                             value_bool = True if sk.value < 1e-5 else False
                             if has_driver(obj.data.shape_keys, attr):
-                                sk.mute = settings.shape_keys_disable_with_drivers
+                                sk.mute = value_bool if (settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
                             elif has_keyframe(obj.data.shape_keys, attr):
                                 sk.mute = settings.shape_keys_disable_with_keyframes
                             else:
                                 sk.mute = value_bool if settings.shape_keys_disable_not_null else True
                             if settings.debug:
-                                print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                                if sk.mute:
+                                    print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                                else:
+                                    print("Shape key " + sk.name + " not muted (previous mute: " + str(status) + ").")
                 else:
                     if obj.data.shape_keys != None:
                         for sk in obj.data.shape_keys.key_blocks:
@@ -929,8 +935,13 @@ class MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings(bpy.types.Operator):
         box = layout.box()
         box.label(text="Driven Shape-Keys", icon="DRIVER")
         col = box.column()
-        col.prop(settings, 'shape_keys_disable_with_drivers')
         col.prop(settings, 'shape_keys_disable_with_keyframes')
+        col.prop(settings, 'shape_keys_disable_with_drivers')
+        row = col.row()
+        row.enabled = settings.shape_keys_disable_with_drivers
+        row.label(text="", icon="BLANK1")
+        row.scale_x =0.5
+        row.prop(settings, 'shape_keys_disable_with_drivers_not_null')
         
 
 # ------------------------------------------------------------------------
