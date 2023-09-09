@@ -74,11 +74,6 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                         description="Disable Normals Auto Smooth",
                                         default=True)
     
-    # Eevee Fast Normals
-    eevee_fast_normals_disable_on_render: bpy.props.BoolProperty(name="Disable Eevee Fast Normals on Render",
-                                        description="Disable Eevee Fast Normals when a render is started, as the standard normal implementation should be preferred for final results",
-                                        default=True)
-    
     # UI Settings
     collapse_options: bpy.props.BoolProperty(name="Collapse",
                                         default=True)
@@ -154,14 +149,6 @@ class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
 bpy.utils.register_class(MustardSimplify_Exceptions)
 bpy.types.Scene.MustardSimplify_Exceptions = bpy.props.PointerProperty(type=MustardSimplify_Exceptions)
 
-# Function to check Eevee Fast Normals before rendering
-@persistent
-def check_eevee_fast_normals(scene):
-    settings = scene.MustardSimplify_Settings
-    if settings.simplify_fastnormals_status and settings.eevee_fast_normals_disable_on_render:
-        bpy.ops.mustard_simplify.fast_normals(custom = False)
-        print("Mustard Simplify - Eevee Fast Normals disabled due to render start")
-    
 # ------------------------------------------------------------------------
 #    Normal Maps Optimizer (thanks to theoldben)
 # ------------------------------------------------------------------------
@@ -1100,8 +1087,6 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         else:
             row.enabled = not scene.render.engine == "CYCLES"
             op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
-            if settings.advanced:
-                row.prop(settings, 'eevee_fast_normals_disable_on_render', text="", icon="RENDER_STILL")
         op2.custom = not settings.simplify_fastnormals_status
         
         box=layout.box()
@@ -1151,8 +1136,8 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         
         box=layout.box()
         box.label(text="Main Settings", icon="SETTINGS")
-        col = box.column()
-        col.prop(settings,"advanced")
+        col = box.column(align=True)
+        #col.prop(settings,"advanced")
         col.prop(settings,"debug")
 
 # ------------------------------------------------------------------------
@@ -1179,18 +1164,12 @@ def register():
     
     # Indexes for UI Lists
     bpy.types.Scene.mustardsimplify_exception_uilist_index = IntProperty(name = "", default = 0)
-    
-    # Handlers
-    bpy.app.handlers.render_init.append(check_eevee_fast_normals)
 
 def unregister():
     
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    
-    # Handlers
-    bpy.app.handlers.render_init.remove(check_eevee_fast_normals)
 
 if __name__ == "__main__":
     register()
