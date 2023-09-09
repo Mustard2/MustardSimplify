@@ -73,6 +73,11 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                         description="Disable Normals Auto Smooth",
                                         default=True)
     
+    # Eevee Fast Normals
+    eevee_fast_normals_disable_on_render: bpy.props.BoolProperty(name="Disable Eevee Fast Normals on Render",
+                                        description="Disable Eevee Fast Normals when a render is started, as the standard normal implementation should be preferred for final results",
+                                        default=True)
+    
     # UI Settings
     collapse_options: bpy.props.BoolProperty(name="Collapse",
                                         default=True)
@@ -151,8 +156,9 @@ bpy.types.Scene.MustardSimplify_Exceptions = bpy.props.PointerProperty(type=Must
 # Function to check Eevee Fast Normals before rendering
 def check_eevee_fast_normals(scene):
     settings = scene.MustardSimplify_Settings
-    if settings.simplify_fastnormals_status:
+    if settings.simplify_fastnormals_status and settings.eevee_fast_normals_disable_on_render:
         bpy.ops.mustard_simplify.fast_normals(custom = False)
+        print("Mustard Simplify - Eevee Fast Normals disabled due to render start")
     
 # ------------------------------------------------------------------------
 #    Normal Maps Optimizer (thanks to theoldben)
@@ -243,10 +249,14 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
                         uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs[2])
                     else:
                         try:
-                            for input in node.inputs:
-                                if input and isinstance(input, bpy.types.NodeSocketVector) and input.is_linked:
-                                    if isinstance(input.links[0].from_node, bpy.types.ShaderNodeUVMap):
-                                        uvNode = input.links[0].from_node
+                            try:
+                                uvNode = nodes[node.name+" UV"]
+                            except:
+                                for input in node.inputs:
+                                    if input and isinstance(input, bpy.types.NodeSocketVector) and input.is_linked:
+                                        if isinstance(input.links[0].from_node, bpy.types.ShaderNodeUVMap):
+                                            uvNode = input.links[0].from_node
+                                            break
                             new.uv_map = uvNode.uv_map
                             nodes.remove(uvNode)
                         except:
@@ -1081,12 +1091,15 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         else:
             op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene", icon="MOD_SIMPLIFY")
         op.enable_simplify = not settings.simplify_status
+        
+        row = layout.row(align=True)
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
-            op2 = layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
-            col = layout.column()
-            col.enabled = not scene.render.engine == "CYCLES"
-            op2 = col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+            row.enabled = not scene.render.engine == "CYCLES"
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+            if settings.advanced:
+                row.prop(settings, 'eevee_fast_normals_disable_on_render', text="", icon="RENDER_STILL")
         op2.custom = not settings.simplify_fastnormals_status
         
         box=layout.box()
@@ -1137,7 +1150,7 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         box=layout.box()
         box.label(text="Main Settings", icon="SETTINGS")
         col = box.column()
-        #col.prop(settings,"advanced")
+        col.prop(settings,"advanced")
         col.prop(settings,"debug")
 
 # ------------------------------------------------------------------------
