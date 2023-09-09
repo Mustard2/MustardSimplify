@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 0, 8),
+    "version": (0, 1, 0),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -19,6 +19,7 @@ import re
 import time
 import math
 from bpy.props import *
+from bpy.app.handlers import persistent
 from mathutils import Vector, Color
 import webbrowser
 
@@ -40,18 +41,35 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     
     
     # Settings to simplify
+    # Modifiers
     modifiers: bpy.props.BoolProperty(name="Modifiers",
                                         description="Disable modifiers",
                                         default=True)
+    # Shape Keys
     shape_keys: bpy.props.BoolProperty(name="Shape Keys",
                                         description="Mute un-used shape keys (value different from 0)",
                                         default=True)
+    shape_keys_disable_not_null: bpy.props.BoolProperty(name="Disable only when Null",
+                                        description="Disable only Shape Keys with value equal to 0.\nThis applies only to non-driven Shape Keys (i.e., without drivers or animation keyframes)",
+                                        default=True)
+    shape_keys_disable_with_drivers: bpy.props.BoolProperty(name="Disable if with Drivers",
+                                        description="Disable Shape Keys driven by drivers",
+                                        default=True)
+    shape_keys_disable_with_drivers_not_null: bpy.props.BoolProperty(name="Disable only when Null",
+                                        description="Disable Shape Keys driven by drivers only when null",
+                                        default=False)
+    shape_keys_disable_with_keyframes: bpy.props.BoolProperty(name="Disable if with Animation Key-Frames",
+                                        description="Disable Shape Keys driven by animation keyframes regardless of other settings.\nThis is not affected by Disable when Null setting: if the setting is on, these Shape Keys are muted regardless of their value",
+                                        default=False)
+    # Physics
     physics: bpy.props.BoolProperty(name="Physics",
                                         description="Disable Physics",
                                         default=True)
+    # Drivers
     drivers: bpy.props.BoolProperty(name="Drivers",
                                         description="Disable Drivers",
                                         default=True)
+    # Normals Auto Smooth
     normals_auto_smooth: bpy.props.BoolProperty(name="Normals Auto Smooth",
                                         description="Disable Normals Auto Smooth",
                                         default=True)
@@ -123,6 +141,18 @@ bpy.types.Scene.MustardSimplify_Status = bpy.props.PointerProperty(type=MustardS
 # Classes to manage exceptions
 class MustardSimplify_Exception(bpy.types.PropertyGroup):
     exception: bpy.props.PointerProperty(type=bpy.types.Object)
+    modifiers: bpy.props.BoolProperty(name="Modifiers",
+                                        description="Disable modifiers",
+                                        default=False)
+    shape_keys: bpy.props.BoolProperty(name="Shape Keys",
+                                        description="Mute un-used shape keys (value different from 0)",
+                                        default=False)
+    drivers: bpy.props.BoolProperty(name="Drivers",
+                                        description="Disable Drivers",
+                                        default=False)
+    normals_auto_smooth: bpy.props.BoolProperty(name="Normals Auto Smooth",
+                                        description="Disable Normals Auto Smooth",
+                                        default=False)
 bpy.utils.register_class(MustardSimplify_Exception)
 
 class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
@@ -153,6 +183,7 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         return (bpy.data.materials or bpy.data.node_groups)
 
     def execute(self, context):
+        
         def mirror(new, old):
             """Copy attributes of the old node to the new node"""
             new.parent = old.parent
@@ -192,7 +223,7 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
             if not group:
                 return
 
-            for node in nodes:
+            for node in reversed(nodes):
                 new = None
                 if self.custom:
                     if isinstance(node, bpy.types.ShaderNodeNormalMap):
@@ -206,6 +237,33 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
                 if new:
                     name = node.name
                     mirror(new, node)
+                    
+                    if isinstance(node, bpy.types.ShaderNodeNormalMap):
+                        uvNode = nodes.new('ShaderNodeUVMap')
+                        uvNode.uv_map = node.uv_map
+                        uvNode.name = node.name+" UV"
+                        uvNode.parent = new.parent
+                        uvNode.mute = True
+                        uvNode.hide = True
+                        uvNode.select = False
+                        uvNode.location = Vector((new.location.x, new.location.y-150.))
+                        uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs[2])
+                    else:
+                        try:
+                            try:
+                                uvNode = nodes[node.name+" UV"]
+                            except:
+                                for input in node.inputs:
+                                    if input and isinstance(input, bpy.types.NodeSocketVector) and input.is_linked:
+                                        if isinstance(input.links[0].from_node, bpy.types.ShaderNodeUVMap):
+                                            uvNode = input.links[0].from_node
+                                            break
+                            new.uv_map = uvNode.uv_map
+                            nodes.remove(uvNode)
+                        except:
+                            print("Mustard Simplify - Could not restore UV before using Fast Normals")
+                            pass
+                    
                     nodes.remove(node)
                     new.name = name
 
@@ -219,12 +277,11 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         
         settings = bpy.context.scene.MustardSimplify_Settings
         settings.simplify_fastnormals_status = self.custom
-        self.custom = not self.custom
         
         return {'FINISHED'}
 
 def default_custom_nodes():
-    use_new_nodes = (bpy.app.version >= (2, 81))
+    use_new_nodes = bpy.app.version >= (2, 81) and bpy.app.version < (3, 2, 0)
 
     group = bpy.data.node_groups.new('Normal Map Optimized', 'ShaderNodeTree')
 
@@ -238,10 +295,13 @@ def default_custom_nodes():
     input.max_value = 1.0
     input = group.inputs.new('NodeSocketColor', 'Color')
     input.default_value = ((0.5, 0.5, 1.0, 1.0))
+    
+    # Input UV as Backup
+    input = group.inputs.new('NodeSocketVector', 'UV')
 
     # Output
     group.outputs.new('NodeSocketVector', 'Normal')
-
+    
     # Add Nodes
     frame = nodes.new('NodeFrame')
     frame.name = 'Matrix * Normal Map'
@@ -339,12 +399,12 @@ def default_custom_nodes():
     node.inputs[0].default_value = 1.0  # Strength
     node.inputs[1].default_value = 1000.0  # Distance
     node.inputs[2].default_value = 1.0  # Height
-    #if use_new_nodes:
-        #node.inputs[3].default_value = 1.0  # Height_dx
-        #node.inputs[4].default_value = 1.0  # Height_dy
-        #node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
-    #else:
-        #node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
+    if use_new_nodes:
+        node.inputs[3].default_value = 1.0  # Height_dx
+        node.inputs[4].default_value = 1.0  # Height_dy
+        node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
+    else:
+        node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
     # for inp in node.inputs:
     #     if inp.name not in ['Height']:
     #         node.inputs.remove(inp)
@@ -549,18 +609,32 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     return el.name, el.status
             return "", None
         
+        def find_exception_obj (collection, obj):
+            for el in collection:
+                if el.exception == obj:
+                    return el
+            return None
+        
+        def has_keyframe(ob, attr):
+            anim = ob.animation_data
+            if anim is not None and anim.action is not None:
+                for fcu in anim.action.fcurves:
+                    if fcu.data_path == attr:
+                        return len(fcu.keyframe_points) > 0
+            return False
+        
+        def has_driver(ob, attr):
+            anim = ob.animation_data
+            if anim is not None and anim.drivers is not None:
+                for fcu in anim.drivers:
+                    if fcu.data_path == attr:
+                        return True
+            return False
+        
         scene = context.scene
         settings = scene.MustardSimplify_Settings
         
         # OBJECTS
-        
-        # Create list of exception Objects
-        except_objects = []
-        exceptions = scene.MustardSimplify_Exceptions.exceptions
-        for excpt in exceptions:
-            except_objects.append(excpt.exception)
-        
-        objects = [x for x in bpy.data.objects if not x in except_objects]
         
         # Create list of modifiers to simplify
         if settings.modifiers:
@@ -576,13 +650,16 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         if settings.debug:
             print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
         
-        for obj in [x for x in objects if not x in except_objects]:
+        #for obj in [x for x in objects if not x in except_objects]:
+        for obj in bpy.data.objects:
+            
+            eo = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
             
             if settings.debug:
                 print("\n ----------- Object: " + obj.name + " -----------")
             
             # Modifiers
-            if settings.modifiers:
+            if settings.modifiers and (eo.modifiers if eo != None else True):
                 
                 modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
                 
@@ -603,7 +680,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 print("Modifier " + mod.name + " reverted to viewport_hide: " + str(status) + ".")
             
             # Shape Keys
-            if settings.shape_keys and obj.type == "MESH":
+            if settings.shape_keys and obj.type == "MESH" and (eo.shape_keys if eo != None else True):
                 
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
@@ -611,9 +688,19 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         for sk in obj.data.shape_keys.key_blocks:
                             status = sk.mute
                             add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
-                            sk.mute = True if sk.value < 1e-5 else False
+                            attr = 'key_blocks["'+sk.name+'"].value'
+                            value_bool = True if sk.value < 1e-5 else False
+                            if has_driver(obj.data.shape_keys, attr):
+                                sk.mute = value_bool if (settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
+                            elif has_keyframe(obj.data.shape_keys, attr):
+                                sk.mute = settings.shape_keys_disable_with_keyframes
+                            else:
+                                sk.mute = value_bool if settings.shape_keys_disable_not_null else True
                             if settings.debug:
-                                print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                                if sk.mute:
+                                    print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                                else:
+                                    print("Shape key " + sk.name + " not muted (previous mute: " + str(status) + ").")
                 else:
                     if obj.data.shape_keys != None:
                         for sk in obj.data.shape_keys.key_blocks:
@@ -624,7 +711,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                     print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
             
             # Normals Auto Smooth
-            if settings.normals_auto_smooth and obj.type == "MESH":
+            if settings.normals_auto_smooth and obj.type == "MESH" and (eo.normals_auto_smooth if eo != None else True):
                 
                 if self.enable_simplify:
                     status = obj.data.use_auto_smooth
@@ -665,9 +752,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             
             for col in collections:
                 collection = eval("bpy.data.%s"%col)
-                if col == "objects":
-                    collection = objects
                 for ob in collection:
+                    if col == "objects":
+                        eo = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, ob)
                     if ob.animation_data is not None:
                         for driver in ob.animation_data.drivers:
                             dp = driver.data_path
@@ -690,7 +777,10 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             idx = driver.array_index
                             if dob is not None and (isinstance(dob,Vector) or isinstance(dob,Color)):
                                 pp = "%s[%d]"%(pp,idx)
-                            driver.mute = self.enable_simplify
+                            if col == "objects":
+                                driver.mute = self.enable_simplify and (eo.drivers if eo != None else True)
+                            else:
+                                driver.mute = self.enable_simplify
                             num_drivers = num_drivers + 1
             
             if settings.debug and self.enable_simplify:
@@ -731,8 +821,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
     """Select the modifiers affected by the simplification process"""
     bl_idname = "mustard_simplify.menu_modifiers_select"
     bl_label = "Select Modifiers to Simplify"
-    
-    modifiers: bpy.props.PointerProperty(type=MustardSimplify_SetModifiers)
     
     @classmethod
     def poll(cls, context):
@@ -843,7 +931,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         
         row = box.row()
         col = row.column()
-        idx = 0
         
         for m in modifiers:
             if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
@@ -855,7 +942,55 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 row2.label(text=m.disp_name, icon=m.icon)
             except:
                 row2.label(text=m.disp_name, icon="BLANK1")
+
+# ------------------------------------------------------------------------
+#    Shape Keys Settings
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings(bpy.types.Operator):
+    """Modify Shape Keys settings"""
+    bl_idname = "mustard_simplify.menu_shape_keys_settings"
+    bl_label = "Shape Keys Settings"
+    
+    @classmethod
+    def poll(cls, context):
+        # Enable operator only when the scene is not simplified
+        settings = bpy.context.scene.MustardSimplify_Settings
+        return not settings.simplify_status
+ 
+    def execute(self, context):
         
+        return{'FINISHED'}
+    
+    def invoke(self, context, event):
+        
+        return context.window_manager.invoke_props_dialog(self, width = 400)
+            
+    def draw(self, context):
+        
+        scene = bpy.context.scene
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        settings = bpy.context.scene.MustardSimplify_Settings
+        
+        layout = self.layout
+        
+        box = layout.box()
+        box.label(text="Global Settings", icon="SHAPEKEY_DATA")
+        col = box.column()
+        col.prop(settings, 'shape_keys_disable_not_null')
+        
+        box = layout.box()
+        box.label(text="Driven Shape-Keys", icon="DRIVER")
+        col = box.column()
+        col.prop(settings, 'shape_keys_disable_with_keyframes')
+        col.prop(settings, 'shape_keys_disable_with_drivers')
+        row = col.row()
+        row.enabled = settings.shape_keys_disable_with_drivers
+        row.label(text="", icon="BLANK1")
+        row.scale_x =0.5
+        row.prop(settings, 'shape_keys_disable_with_drivers_not_null')
+        
+
 # ------------------------------------------------------------------------
 #    Exceptions
 # ------------------------------------------------------------------------
@@ -891,9 +1026,10 @@ class MUSTARDSIMPLIFY_OT_AddException(bpy.types.Operator):
         settings = bpy.context.scene.MustardSimplify_Settings
         scene = context.scene
         
-        res = add_exception(scene.MustardSimplify_Exceptions.exceptions, settings.exception_select)
-        if not res:
-            self.report({'ERROR'}, 'Mustard Simplify - Object already added to exceptions.')
+        if settings.exception_select != None:
+            res = add_exception(scene.MustardSimplify_Exceptions.exceptions, settings.exception_select)
+            if not res:
+                self.report({'ERROR'}, 'Mustard Simplify - Object already added to exceptions.')
         
         return {'FINISHED'}
 
@@ -921,9 +1057,15 @@ class MUSTARDSIMPLIFY_OT_RemoveException(bpy.types.Operator):
 
 class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
     """UIList for exceptions."""
-
+    
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
+        
+        def draw_icon(layout, icon, cdx):
+            if cdx:
+                layout.label(text="", icon=icon)
+            else:
+                layout.label(text="", icon="BLANK1")
         
         scene = context.scene
         settings = scene.MustardSimplify_Settings
@@ -935,6 +1077,13 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.prop(item.exception, 'name', text ="", icon ="OUTLINER_OB_" + item.exception.type, emboss=False, translate=False)
+        
+        row = layout.row(align=True)
+        draw_icon(row, "MODIFIER", item.modifiers)
+        draw_icon(row, "SHAPEKEY_DATA", item.shape_keys)
+        draw_icon(row, "DRIVER", item.drivers)
+        draw_icon(row, "NORMALS_FACE", item.normals_auto_smooth)
+            
 
 # ------------------------------------------------------------------------
 #    UI
@@ -961,24 +1110,28 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         else:
             op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene", icon="MOD_SIMPLIFY")
         op.enable_simplify = not settings.simplify_status
+        
+        row = layout.row(align=True)
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
-            layout.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
         else:
-            col = layout.column()
-            col.enabled = not scene.render.engine == "CYCLES"
-            col.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+            row.enabled = not scene.render.engine == "CYCLES"
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+        op2.custom = not settings.simplify_fastnormals_status
         
         box=layout.box()
         row = box.row()
         row.prop(settings, 'collapse_options', text="", icon="RIGHTARROW" if settings.collapse_options else "DOWNARROW_HLT", emboss=False)
         row.label(text="Options")
         if not settings.collapse_options:
-            col = box.column()
+            col = box.column(align=True)
             col.enabled = not settings.simplify_status
             row = col.row()
             row.prop(settings,"modifiers")
             row.operator(MUSTARDSIMPLIFY_OT_MenuModifiersSelect.bl_idname, icon="PREFERENCES", text="")
-            col.prop(settings,"shape_keys")
+            row = col.row()
+            row.prop(settings,"shape_keys")
+            row.operator(MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings.bl_idname, icon="PREFERENCES", text="")
             col.prop(settings,"drivers")
             col.prop(settings,"physics")
             col.prop(settings,"normals_auto_smooth")
@@ -1000,6 +1153,27 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
             row.enabled = not settings.simplify_status
             row.prop_search(settings, "exception_select", scene, "objects", text = "")
             row.operator(MUSTARDSIMPLIFY_OT_AddException.bl_idname, text="", icon="ADD")
+            
+            if scene.mustardsimplify_exception_uilist_index > -1:
+                obj = scene.MustardSimplify_Exceptions.exceptions[scene.mustardsimplify_exception_uilist_index]
+                
+                if obj != None:
+                    box = box.box()
+                    col = box.column(align=True)
+                    row = col.row()
+                    row.enabled = obj.exception.type == "MESH"
+                    row.prop(obj, 'modifiers')
+                    
+                    row = col.row()
+                    row.enabled = obj.exception.type == "MESH"
+                    row.prop(obj, 'shape_keys')
+                    
+                    row = col.row()
+                    row.prop(obj, 'drivers')
+                    
+                    row = col.row()
+                    row.enabled = obj.exception.type == "MESH"
+                    row.prop(obj, 'normals_auto_smooth')
 
 class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
     bl_idname = "MUSTARDSIMPLIFY_PT_Settings"
@@ -1013,7 +1187,7 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         
         box=layout.box()
         box.label(text="Main Settings", icon="SETTINGS")
-        col = box.column()
+        col = box.column(align=True)
         #col.prop(settings,"advanced")
         col.prop(settings,"debug")
 
@@ -1025,6 +1199,7 @@ classes = (
     MUSTARDSIMPLIFY_OT_FastNormals,
     MUSTARDSIMPLIFY_OT_SimplifyScene,
     MUSTARDSIMPLIFY_OT_MenuModifiersSelect,
+    MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings,
     MUSTARDSIMPLIFY_OT_AddException,
     MUSTARDSIMPLIFY_OT_RemoveException,
     MUSTARDSIMPLIFY_UL_Exceptions_UIList,
