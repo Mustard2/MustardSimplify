@@ -1188,7 +1188,7 @@ def unregister():
         unregister_class(cls)
     
     # Handlers
-    bpy.app.handlers.render_complete.remove(check_eevee_fast_normals)
+    bpy.app.handlers.render_pre.remove(check_eevee_fast_normals)
 
 if __name__ == "__main__":
     register()
