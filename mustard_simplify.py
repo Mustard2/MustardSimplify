@@ -148,6 +148,12 @@ class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
 bpy.utils.register_class(MustardSimplify_Exceptions)
 bpy.types.Scene.MustardSimplify_Exceptions = bpy.props.PointerProperty(type=MustardSimplify_Exceptions)
 
+# Function to check Eevee Fast Normals before rendering
+def check_eevee_fast_normals(scene):
+    settings = scene.MustardSimplify_Settings
+    if settings.simplify_fastnormals_status:
+        bpy.ops.mustard_simplify.fast_normals(custom = False)
+    
 # ------------------------------------------------------------------------
 #    Normal Maps Optimizer (thanks to theoldben)
 # ------------------------------------------------------------------------
@@ -1158,12 +1164,18 @@ def register():
     
     # Indexes for UI Lists
     bpy.types.Scene.mustardsimplify_exception_uilist_index = IntProperty(name = "", default = 0)
+    
+    # Handlers
+    bpy.app.handlers.render_pre.append(check_eevee_fast_normals)
 
 def unregister():
     
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
+    
+    # Handlers
+    bpy.app.handlers.render_complete.remove(check_eevee_fast_normals)
 
 if __name__ == "__main__":
     register()
