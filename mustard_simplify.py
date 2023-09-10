@@ -1107,6 +1107,25 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
         draw_icon(row, "NORMALS_FACE", item.normals_auto_smooth)
 
 # ------------------------------------------------------------------------
+#    Link (thanks to Mets3D)
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_LinkButton(bpy.types.Operator):
+    """Open links in a web browser"""
+    bl_idname = "mustard_simplify.openlink"
+    bl_label = "Open Link"
+    bl_options = {'REGISTER'}
+    
+    url: StringProperty(name='URL',
+        description="URL",
+        default="http://blender.org/"
+    )
+
+    def execute(self, context):
+        webbrowser.open_new(self.url)
+        return {'FINISHED'}
+
+# ------------------------------------------------------------------------
 #    UI
 # ------------------------------------------------------------------------
 
@@ -1118,7 +1137,6 @@ class MainPanel:
 class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
     bl_idname = "MUSTARDSIMPLIFY_PT_Options"
     bl_label = "Simplify"
-    bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
         
@@ -1144,6 +1162,7 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         row = box.row()
         row.prop(settings, 'collapse_options', text="", icon="RIGHTARROW" if settings.collapse_options else "DOWNARROW_HLT", emboss=False)
         row.label(text="Options")
+        row.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="", icon="QUESTION").url="https://github.com/Mustard2/MustardSimplify/wiki#simplify"
         if not settings.collapse_options:
             col = box.column(align=True)
             col.enabled = not settings.simplify_status
@@ -1161,6 +1180,7 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
         row = box.row()
         row.prop(settings, 'collapse_exceptions', text="", icon="RIGHTARROW" if settings.collapse_exceptions else "DOWNARROW_HLT", emboss=False)
         row.label(text="Exceptions")
+        row.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="", icon="QUESTION").url="https://github.com/Mustard2/MustardSimplify/wiki#exceptions"
         if not settings.collapse_exceptions:
             
             row = box.row()
@@ -1230,6 +1250,9 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         col = box.column(align=True)
         #col.prop(settings,"advanced")
         col.prop(settings,"debug")
+        
+        layout.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="Check New Version", icon="URL").url="https://github.com/Mustard2/MustardSimplify/releases"
+        layout.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="Report Issue", icon="URL").url="https://github.com/Mustard2/MustardSimplify/issues"
 
 # ------------------------------------------------------------------------
 #    Register
@@ -1243,6 +1266,7 @@ classes = (
     MUSTARDSIMPLIFY_OT_AddException,
     MUSTARDSIMPLIFY_OT_RemoveException,
     MUSTARDSIMPLIFY_UL_Exceptions_UIList,
+    MUSTARDSIMPLIFY_OT_LinkButton,
     MUSTARDSIMPLIFY_PT_Options,
     MUSTARDSIMPLIFY_PT_Settings,
 )
