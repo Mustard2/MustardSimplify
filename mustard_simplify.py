@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 1, 1),
+    "version": (0, 1, 2),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -646,7 +646,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         # OBJECTS
         
         # Remove objects in the exception collection
-        objects = [x for x in bpy.data.objects]
+        objects = [x for x in bpy.data.objects if x.override_library == None]
         if settings.exception_collection != None:
             objects = [x for x in bpy.data.objects if not x in [x for x in settings.exception_collection.objects]]
         
