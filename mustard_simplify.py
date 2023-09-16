@@ -1132,7 +1132,7 @@ class MUSTARDSIMPLIFY_OT_LinkButton(bpy.types.Operator):
 class MainPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "Mustard Simplify"
+    bl_category = "Simplify"
 
 class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
     bl_idname = "MUSTARDSIMPLIFY_PT_Options"
