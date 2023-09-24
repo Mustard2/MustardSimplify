@@ -1114,7 +1114,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
     """Remove heavy data from objects"""
     bl_idname = "mustard_simplify.data_removal"
     bl_label = "Remove Data"
-    bl_options = {'REGISTER'}
+    bl_options = {'UNDO'}
 
     remove_diffeomorphic_data: bpy.props.BoolProperty(default=True,
                     name = "Diffeomorphic",
@@ -1150,14 +1150,22 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
             self.report({'WARNING'}, "Mustard Simplify - No Data Block to remove was selected.")
             return {'FINISHED'}
         
+        # Gather Objects
+        objects = []
+        for obj in bpy.data.objects:
+            objects.append(obj)
+            if obj.data != None:
+                objects.append(obj.data)
+        
         # Remove data
         data_deleted = 0
-        for obj in bpy.data.objects:
+        for obj in objects:
             items_to_remove = []
             for k,v in obj.items():
                 for el in to_remove:
                     if el in k:
                         items_to_remove.append(k)
+            items_to_remove.reverse()
             for k in items_to_remove:
                 data_deleted = data_deleted + remove_data(obj, k)
             obj.update_tag()
