@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 1, 2),
+    "version": (0, 2, 0),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -1107,6 +1107,89 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
         draw_icon(row, "NORMALS_FACE", item.normals_auto_smooth)
 
 # ------------------------------------------------------------------------
+#    Data Removal
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
+    """Remove heavy data from objects"""
+    bl_idname = "mustard_simplify.data_removal"
+    bl_label = "Remove Data"
+    bl_options = {'REGISTER'}
+
+    remove_diffeomorphic_data: bpy.props.BoolProperty(default=True,
+                    name = "Diffeomorphic",
+                    description = "Remove Diffeomorphic data")
+    remove_custom_string_data: bpy.props.StringProperty(default="",
+                    name = "Custom Removal",
+                    description = "Remove all data blocks which contains this custom string")
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        
+        def remove_data(obj, attr):
+            try:
+                del obj[attr]
+                return 1
+            except:
+                return 0
+        
+        scene = context.scene
+        settings = scene.MustardSimplify_Settings
+        
+        # Decide which data to remove
+        to_remove = []
+        if self.remove_custom_string_data != "" and settings.advanced:
+            to_remove.append(self.remove_custom_string_data)
+        if self.remove_diffeomorphic_data:
+            to_remove.append("Daz")
+        
+        if not len(to_remove):
+            self.report({'WARNING'}, "Mustard Simplify - No Data Block to remove was selected.")
+            return {'FINISHED'}
+        
+        # Remove data
+        data_deleted = 0
+        for obj in bpy.data.objects:
+            items_to_remove = []
+            for k,v in obj.items():
+                for el in to_remove:
+                    if el in k:
+                        items_to_remove.append(k)
+            for k in items_to_remove:
+                data_deleted = data_deleted + remove_data(obj, k)
+            obj.update_tag()
+        
+        if data_deleted > 0:
+            self.report({'INFO'}, "Mustard Simplify - Data Blocks removed: " + str(data_deleted))
+        else:
+            self.report({'WARNING'}, "Mustard Simplify - No Data Block to remove was found.")
+        
+        return {'FINISHED'}
+    
+    def invoke(self, context, event):
+        
+        return context.window_manager.invoke_props_dialog(self, width = 400)
+    
+    def draw(self, context):
+        
+        scene = context.scene
+        settings = scene.MustardSimplify_Settings
+        
+        layout = self.layout
+        
+        if settings.advanced:
+            box = layout.box()
+            box.label(text="General", icon="SETTINGS")
+            box.prop(self, 'remove_custom_string_data')
+        
+        box = layout.box()
+        box.label(text="External Add-on", icon="WORLD_DATA")
+        box.prop(self, 'remove_diffeomorphic_data')
+
+# ------------------------------------------------------------------------
 #    Link (thanks to Mets3D)
 # ------------------------------------------------------------------------
 
@@ -1134,8 +1217,8 @@ class MainPanel:
     bl_region_type = "UI"
     bl_category = "Simplify"
 
-class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
-    bl_idname = "MUSTARDSIMPLIFY_PT_Options"
+class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
+    bl_idname = "MUSTARDSIMPLIFY_PT_Simplify"
     bl_label = "Simplify"
 
     def draw(self, context):
@@ -1235,6 +1318,22 @@ class MUSTARDSIMPLIFY_PT_Options(MainPanel, bpy.types.Panel):
                 row.prop_search(settings, "exception_collection", bpy.data, "collections", text = "")
                 
 
+class MUSTARDSIMPLIFY_PT_Tools(MainPanel, bpy.types.Panel):
+    bl_idname = "MUSTARDSIMPLIFY_PT_Tools"
+    bl_label = "Tools"
+    bl_options = {"DEFAULT_CLOSED"}
+
+    def draw(self, context):
+        
+        layout = self.layout
+        settings = bpy.context.scene.MustardSimplify_Settings
+        
+        box=layout.box()
+        row = box.row()
+        row.label(text="Mesh", icon="OUTLINER_DATA_MESH")
+        row.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="", icon="QUESTION").url="https://github.com/Mustard2/MustardSimplify/wiki#tools"
+        box.operator(MUSTARDSIMPLIFY_OT_DataRemoval.bl_idname, text="Data Removal", icon="LIBRARY_DATA_BROKEN")
+
 class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
     bl_idname = "MUSTARDSIMPLIFY_PT_Settings"
     bl_label = "Settings"
@@ -1248,7 +1347,7 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
         box=layout.box()
         box.label(text="Main Settings", icon="SETTINGS")
         col = box.column(align=True)
-        #col.prop(settings,"advanced")
+        col.prop(settings,"advanced")
         col.prop(settings,"debug")
         
         layout.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="Check New Version", icon="URL").url="https://github.com/Mustard2/MustardSimplify/releases"
@@ -1266,8 +1365,10 @@ classes = (
     MUSTARDSIMPLIFY_OT_AddException,
     MUSTARDSIMPLIFY_OT_RemoveException,
     MUSTARDSIMPLIFY_UL_Exceptions_UIList,
+    MUSTARDSIMPLIFY_OT_DataRemoval,
     MUSTARDSIMPLIFY_OT_LinkButton,
-    MUSTARDSIMPLIFY_PT_Options,
+    MUSTARDSIMPLIFY_PT_Simplify,
+    MUSTARDSIMPLIFY_PT_Tools,
     MUSTARDSIMPLIFY_PT_Settings,
 )
 
