@@ -5,7 +5,7 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (3, 6, 0),
     "warning": "",
     "category": "3D View",
@@ -38,9 +38,10 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     debug: bpy.props.BoolProperty(name="Debug mode",
                                         description="Unlock debug mode.\nThis will generate more messaged in the console.\nEnable it only if you encounter problems, as it might degrade general Blender performance",
                                         default=False)
-    
-    
-    # Settings to simplify
+    # Modifiers
+    blender_simplify: bpy.props.BoolProperty(name="Blender Simplify",
+                                        description="Enable Blender Simplify",
+                                        default=True)
     # Modifiers
     modifiers: bpy.props.BoolProperty(name="Modifiers",
                                         description="Disable modifiers",
@@ -78,6 +79,8 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     collapse_options: bpy.props.BoolProperty(name="Collapse",
                                         default=True)
     collapse_exceptions: bpy.props.BoolProperty(name="Collapse",
+                                        default=True)
+    collapse_others: bpy.props.BoolProperty(name="Collapse",
                                         default=True)
     
     # Exceptions
@@ -643,6 +646,11 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         scene = context.scene
         settings = scene.MustardSimplify_Settings
         
+        # BLENDER SIMPLIFY
+        rd = context.scene.render
+        if settings.blender_simplify:
+            rd.use_simplify = self.enable_simplify
+        
         # OBJECTS
         
         # Remove objects in the exception collection
@@ -816,6 +824,71 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         return {'FINISHED'}
 
 # ------------------------------------------------------------------------
+#    Blender Simplify Settings
+# ------------------------------------------------------------------------
+
+class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
+    """Modify Blender Simplify settings"""
+    bl_idname = "mustard_simplify.menu_blender_simplify_settings"
+    bl_label = "Blender Simplify Settings"
+    
+    @classmethod
+    def poll(cls, context):
+        return True
+ 
+    def execute(self, context):
+        
+        return{'FINISHED'}
+    
+    def invoke(self, context, event):
+        
+        return context.window_manager.invoke_props_dialog(self, width = 400)
+            
+    def draw(self, context):
+        
+        scene = context.scene
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        settings = bpy.context.scene.MustardSimplify_Settings
+        
+        layout = self.layout
+        layout.use_property_split = True
+        rd = scene.render
+        
+        # Viewport
+        box = layout.box()
+        
+        box.label(text="Viewport", icon="RESTRICT_VIEW_ON")
+
+        flow = box.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+
+        col = flow.column()
+        col.prop(rd, "simplify_subdivision", text="Max Subdivision")
+        col = flow.column()
+        col.prop(rd, "simplify_child_particles", text="Max Child Particles")
+        col = flow.column()
+        col.prop(rd, "simplify_volumes", text="Volume Resolution")
+        if context.engine in 'BLENDER_EEVEE_NEXT':
+            col = flow.column()
+            col.prop(rd, "simplify_shadows", text="Shadow Resolution")
+        
+        # Render
+        box = layout.box()
+        
+        box.label(text="Render", icon="RESTRICT_RENDER_ON")
+
+        flow = box.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+        
+        col = flow.column()
+        col.prop(rd, "simplify_subdivision_render", text="Max Subdivision")
+        col = flow.column()
+        col.prop(rd, "simplify_child_particles_render", text="Max Child Particles")
+        if context.engine in 'BLENDER_EEVEE_NEXT':
+            col = flow.column()
+            col.prop(rd, "simplify_shadows_render", text="Shadow Resolution")
+        
+        
+
+# ------------------------------------------------------------------------
 #    Modifiers Select
 # ------------------------------------------------------------------------
 
@@ -930,8 +1003,8 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 
                 add_modifier(modifiers, m, disp_name, icon, simplify)
                 
-                if settings.debug:
-                    print("Mustard Simplify - Modifiers List generated")
+            if settings.debug:
+                print("Mustard Simplify - Modifiers List generated")
         
         return context.window_manager.invoke_props_dialog(self, width = 800)
             
@@ -1119,6 +1192,9 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
     remove_diffeomorphic_data: bpy.props.BoolProperty(default=True,
                     name = "Diffeomorphic",
                     description = "Remove Diffeomorphic data")
+    remove_diffeomorphic_data_preserve_morphs: bpy.props.BoolProperty(default=True,
+                    name = "Preserve Morphs",
+                    description = "Prevent Morphs deletion")
     remove_custom_string_data: bpy.props.StringProperty(default="",
                     name = "Custom Removal",
                     description = "Remove all data blocks which contains this custom string")
@@ -1139,12 +1215,31 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
         scene = context.scene
         settings = scene.MustardSimplify_Settings
         
+        if settings.debug:
+            print("\n ----------- MUSTARD SIMPLIFY DATA REMOVAL LOG -----------\n")
+        
         # Decide which data to remove
         to_remove = []
+        to_preserve = []
         if self.remove_custom_string_data != "" and settings.advanced:
             to_remove.append(self.remove_custom_string_data)
+            if settings.debug:
+                print("Removing data with string: " + self.remove_custom_string_data)
         if self.remove_diffeomorphic_data:
             to_remove.append("Daz")
+            if settings.debug:
+                print("Removing Diffeomorphic data")
+            if self.remove_diffeomorphic_data_preserve_morphs:
+                to_preserve.append("DazExpressions")
+                to_preserve.append("DazFacs")
+                to_preserve.append("DazFacsexpr")
+                to_preserve.append("DazFlexions")
+                to_preserve.append("DazUnits")
+                to_preserve.append("DazVisemes")
+                to_preserve.append("DazMorphCats")
+                to_preserve.append("DazCustomMorphs")
+                to_preserve.append("DazCustom")
+                to_preserve.append("DazActivated")
         
         if not len(to_remove):
             self.report({'WARNING'}, "Mustard Simplify - No Data Block to remove was selected.")
@@ -1166,8 +1261,13 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                     if el in k:
                         items_to_remove.append(k)
             items_to_remove.reverse()
+            if settings.debug and len(items_to_remove) >0:
+                print("\n Removing from Object: " + obj.name)
             for k in items_to_remove:
-                data_deleted = data_deleted + remove_data(obj, k)
+                if not k in to_preserve:
+                    data_deleted = data_deleted + remove_data(obj, k)
+                if settings.debug:
+                    print("   - " + k)
             obj.update_tag()
         
         if data_deleted > 0:
@@ -1194,8 +1294,13 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
             box.prop(self, 'remove_custom_string_data')
         
         box = layout.box()
-        box.label(text="External Add-on", icon="WORLD_DATA")
-        box.prop(self, 'remove_diffeomorphic_data')
+        col = box.column()
+        col.label(text="External Add-on", icon="WORLD_DATA")
+        col.prop(self, 'remove_diffeomorphic_data')
+        row = col.row(align=True)
+        row.enabled = self.remove_diffeomorphic_data
+        row.label(text="", icon="BLANK1")
+        row.prop(self, 'remove_diffeomorphic_data_preserve_morphs')
 
 # ------------------------------------------------------------------------
 #    Link (thanks to Mets3D)
@@ -1236,17 +1341,17 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         settings = scene.MustardSimplify_Settings
         
         if settings.simplify_status:
-            op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Un-Simplify Scene", icon="MOD_SIMPLIFY")
+            op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Un-Simplify Scene", icon="MOD_SIMPLIFY", depress=True)
         else:
             op = layout.operator(MUSTARDSIMPLIFY_OT_SimplifyScene.bl_idname, text = "Simplify Scene", icon="MOD_SIMPLIFY")
         op.enable_simplify = not settings.simplify_status
         
         row = layout.row(align=True)
         if settings.simplify_fastnormals_status and scene.render.engine == "CYCLES":
-            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR")
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon = "ERROR", depress=settings.simplify_fastnormals_status)
         else:
             row.enabled = not scene.render.engine == "CYCLES"
-            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT")
+            op2 = row.operator(MUSTARDSIMPLIFY_OT_FastNormals.bl_idname, text = "Enable Eevee Fast Normals" if not settings.simplify_fastnormals_status else "Disable Eevee Fast Normals", icon="MOD_NORMALEDIT", depress=settings.simplify_fastnormals_status)
         op2.custom = not settings.simplify_fastnormals_status
         
         box=layout.box()
@@ -1255,6 +1360,12 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         row.label(text="Options")
         row.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="", icon="QUESTION").url="https://github.com/Mustard2/MustardSimplify/wiki#simplify"
         if not settings.collapse_options:
+            row = box.row()
+            col = row.column()
+            col.enabled = not settings.simplify_status
+            col.prop(settings,"blender_simplify")
+            row.operator(MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings.bl_idname, icon="PREFERENCES", text="")
+            
             col = box.column(align=True)
             col.enabled = not settings.simplify_status
             row = col.row()
@@ -1291,7 +1402,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row.prop_search(settings, "exception_select", scene, "objects", text = "")
                 row.operator(MUSTARDSIMPLIFY_OT_AddException.bl_idname, text="", icon="ADD")
                 
-                if scene.mustardsimplify_exception_uilist_index > -1:
+                if scene.mustardsimplify_exception_uilist_index > -1 and len(scene.MustardSimplify_Exceptions.exceptions)>0:
                     obj = scene.MustardSimplify_Exceptions.exceptions[scene.mustardsimplify_exception_uilist_index]
                     
                     if obj != None:
@@ -1368,6 +1479,7 @@ class MUSTARDSIMPLIFY_PT_Settings(MainPanel, bpy.types.Panel):
 classes = (
     MUSTARDSIMPLIFY_OT_FastNormals,
     MUSTARDSIMPLIFY_OT_SimplifyScene,
+    MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings,
     MUSTARDSIMPLIFY_OT_MenuModifiersSelect,
     MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings,
     MUSTARDSIMPLIFY_OT_AddException,
