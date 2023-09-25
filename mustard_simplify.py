@@ -1435,6 +1435,22 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row = box.row()
                 row.enabled = not settings.simplify_status
                 row.prop_search(settings, "exception_collection", bpy.data, "collections", text = "")
+        
+        if settings.advanced:
+            box=layout.box()
+            row = box.row()
+            row.prop(settings, 'collapse_others', text="", icon="RIGHTARROW" if settings.collapse_others else "DOWNARROW_HLT", emboss=False)
+            row.label(text="Advanced")
+            row.operator(MUSTARDSIMPLIFY_OT_LinkButton.bl_idname, text="", icon="QUESTION").url="https://github.com/Mustard2/MustardSimplify/wiki#advanced"
+            if not settings.collapse_others:
+                row = box.row()
+                
+                prefs = context.preferences
+                system = prefs.system
+
+                row.label(text="Textures Size Limit")
+                row.scale_x = 1.5
+                row.prop(system, "gl_texture_limit", text="")
                 
 
 class MUSTARDSIMPLIFY_PT_Tools(MainPanel, bpy.types.Panel):
