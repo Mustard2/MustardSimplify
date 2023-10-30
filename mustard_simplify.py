@@ -5,8 +5,8 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (0, 2, 1),
-    "blender": (3, 6, 0),
+    "version": (0, 3, 0),
+    "blender": (4, 0, 0),
     "warning": "",
     "category": "3D View",
 }
@@ -301,18 +301,18 @@ def default_custom_nodes():
     links = group.links
 
     # Input
-    input = group.inputs.new('NodeSocketFloat', 'Strength')
+    input = group.interface.new_socket("Strength", in_out='INPUT', socket_type='NodeSocketFloat')
     input.default_value = 1.0
     input.min_value = 0.0
     input.max_value = 1.0
-    input = group.inputs.new('NodeSocketColor', 'Color')
+    input = group.interface.new_socket("Color", in_out='INPUT', socket_type='NodeSocketColor')
     input.default_value = ((0.5, 0.5, 1.0, 1.0))
     
     # Input UV as Backup
-    input = group.inputs.new('NodeSocketVector', 'UV')
+    input = group.interface.new_socket("UV", in_out='INPUT', socket_type='NodeSocketVector')
 
     # Output
-    group.outputs.new('NodeSocketVector', 'Normal')
+    group.interface.new_socket("Normal", in_out='OUTPUT', socket_type='NodeSocketVector')
     
     # Add Nodes
     frame = nodes.new('NodeFrame')
@@ -417,9 +417,7 @@ def default_custom_nodes():
         node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
     else:
         node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
-    # for inp in node.inputs:
-    #     if inp.name not in ['Height']:
-    #         node.inputs.remove(inp)
+    
     node = nodes.new('ShaderNodeBump')
     node.name = 'Tangent'
     node.label = 'Tangent'
@@ -428,9 +426,6 @@ def default_custom_nodes():
     node.color = Color((0.6079999804496765, 0.6079999804496765, 0.6079999804496765))
     node.location = Vector((72.01412963867188, 17.504592895507812))
     node.invert = True
-    # for inp in node.inputs:
-    #     if inp.name not in ['Height']:
-    #         node.inputs.remove(inp)
 
     frame = nodes.new('NodeFrame')
     frame.name = 'Node'
