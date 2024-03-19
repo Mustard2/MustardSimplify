@@ -196,7 +196,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         row = box.row()
         col = row.column()
 
-        for m in [x for x in modifiers if x.type == "GREASE_PENCIL"]:
+        for m in [x for x in modifiers if x.type == "GPENCIL"]:
             if m.name in ["GP_TEXTURE", "GP_ARRAY", "GP_ARMATURE", "GP_COLOR"]:
                 col = row.column()
             row2 = col.row()
