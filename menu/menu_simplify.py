@@ -12,6 +12,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
         settings = scene.MustardSimplify_Settings
+        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
         if settings.simplify_status:
             op = layout.operator("mustard_simplify.scene", text="Un-Simplify Scene",
@@ -120,7 +121,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row.enabled = not settings.simplify_status
                 row.prop_search(settings, "exception_collection", bpy.data, "collections", text="")
 
-        if settings.advanced:
+        if addon_prefs.advanced:
             box = layout.box()
             row = box.row()
             row.prop(settings, 'collapse_others', text="",

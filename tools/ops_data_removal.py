@@ -33,20 +33,21 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
         scene = context.scene
         settings = scene.MustardSimplify_Settings
+        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
-        if settings.debug:
+        if addon_prefs.debug:
             print("\n ----------- MUSTARD SIMPLIFY DATA REMOVAL LOG -----------\n")
 
         # Decide which data to remove
         to_remove = []
         to_preserve = []
-        if self.remove_custom_string_data != "" and settings.advanced:
+        if self.remove_custom_string_data != "" and addon_prefs.advanced:
             to_remove.append(self.remove_custom_string_data)
-            if settings.debug:
+            if addon_prefs.debug:
                 print("Removing data with string: " + self.remove_custom_string_data)
         if self.remove_diffeomorphic_data:
             to_remove.append("Daz")
-            if settings.debug:
+            if addon_prefs.debug:
                 print("Removing Diffeomorphic data")
             if self.remove_diffeomorphic_data_preserve_morphs:
                 to_preserve.append("DazExpressions")
@@ -80,12 +81,12 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                     if el in k:
                         items_to_remove.append(k)
             items_to_remove.reverse()
-            if settings.debug and len(items_to_remove) > 0:
+            if addon_prefs.debug and len(items_to_remove) > 0:
                 print("\n Removing from Object: " + obj.name)
             for k in items_to_remove:
                 if not k in to_preserve:
                     data_deleted = data_deleted + remove_data(obj, k)
-                if settings.debug:
+                if addon_prefs.debug:
                     print("   - " + k)
             obj.update_tag()
 
@@ -102,12 +103,11 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
     def draw(self, context):
 
-        scene = context.scene
-        settings = scene.MustardSimplify_Settings
+        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
         layout = self.layout
 
-        if settings.advanced:
+        if addon_prefs.advanced:
             box = layout.box()
             box.label(text="General", icon="SETTINGS")
             box.prop(self, 'remove_custom_string_data')

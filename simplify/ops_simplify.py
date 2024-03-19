@@ -64,6 +64,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
         scene = context.scene
         settings = scene.MustardSimplify_Settings
+        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
         # BLENDER SIMPLIFY
         rd = context.scene.render
@@ -88,14 +89,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             else:
                 modifiers_ignore = [x.name for x in chosen_mods if not x.simplify]
 
-        if settings.debug:
+        if addon_prefs.debug:
             print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
 
         for obj in objects:
 
             eo = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
 
-            if settings.debug:
+            if addon_prefs.debug:
                 print("\n ----------- Object: " + obj.name + " -----------")
 
             # Modifiers
@@ -113,7 +114,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         status = mod.show_viewport
                         add_prop_status(obj.MustardSimplify_Status.modifiers, [mod.name, status])
                         mod.show_viewport = False
-                        if settings.debug:
+                        if addon_prefs.debug:
                             print("Modifier " + mod.name + " disabled (previous viewport_hide: " + str(status) + ").")
                 else:
                     for mod in modifiers:
@@ -124,7 +125,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         name, status = find_prop_status(obj.MustardSimplify_Status.modifiers, mod)
                         if name != "":
                             mod.show_viewport = status
-                            if settings.debug:
+                            if addon_prefs.debug:
                                 print("Modifier " + mod.name + " reverted to viewport_hide: " + str(status) + ".")
 
             # Shape Keys
@@ -145,7 +146,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 sk.mute = settings.shape_keys_disable_with_keyframes
                             else:
                                 sk.mute = value_bool if settings.shape_keys_disable_not_null else True
-                            if settings.debug:
+                            if addon_prefs.debug:
                                 if sk.mute:
                                     print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
                                 else:
@@ -156,7 +157,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             name, status = find_prop_status(obj.MustardSimplify_Status.shape_keys, sk)
                             if name != "":
                                 sk.mute = status
-                                if settings.debug:
+                                if addon_prefs.debug:
                                     print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
 
             # Normals Auto Smooth
@@ -188,12 +189,13 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     status = get_status_norm_autosmooth(obj)
                     obj.MustardSimplify_Status.normals_auto_smooth = status
                     update_norm_autosmooth(obj, False)
-                    if settings.debug:
+                    if addon_prefs.debug:
                         print("Normals Auto Smooth disabled (previous status: " + str(status) + ").")
                 else:
-                    update_norm_autosmooth(obj, obj.MustardSimplify_Status.normals_auto_smooth)
-                    if settings.debug:
-                        print("Normals Auto Smooth reverted to status: " + str(obj.data.use_auto_smooth) + ".")
+                    status = obj.MustardSimplify_Status.normals_auto_smooth
+                    update_norm_autosmooth(obj, status)
+                    if addon_prefs.debug:
+                        print("Normals Auto Smooth reverted to status: " + str(status) + ".")
 
         # SCENE
         if settings.physics:
@@ -201,18 +203,18 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             # Rigid Body World
             if context.scene.rigidbody_world:
 
-                if settings.debug:
+                if addon_prefs.debug:
                     print("\n ----------- Scene: " + scene.name + " -----------")
 
                 if self.enable_simplify:
                     status = scene.rigidbody_world.enabled
                     scene.MustardSimplify_Status.rigidbody_world = status
                     scene.rigidbody_world.enabled = False
-                    if settings.debug:
+                    if addon_prefs.debug:
                         print("Rigid Body World disabled (previous status: " + str(status) + ").")
                 else:
                     scene.rigidbody_world.enabled = scene.MustardSimplify_Status.rigidbody_world
-                    if settings.debug:
+                    if addon_prefs.debug:
                         print("Rigid Body World disabled reverted to status: " + str(
                             scene.rigidbody_world.enabled) + ").")
 
@@ -257,12 +259,12 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 driver.mute = self.enable_simplify
                             num_drivers = num_drivers + 1
 
-            if settings.debug and self.enable_simplify:
+            if addon_prefs.debug and self.enable_simplify:
                 print("\n ----------- Drivers disabled: " + str(num_drivers) + " -----------")
-            if settings.debug and not self.enable_simplify:
+            if addon_prefs.debug and not self.enable_simplify:
                 print("\n ----------- Drivers reverted: " + str(num_drivers) + " -----------")
 
-        if settings.debug:
+        if addon_prefs.debug:
             print("\n")
 
         settings.simplify_status = self.enable_simplify

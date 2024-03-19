@@ -45,6 +45,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         scene = bpy.context.scene
         settings = scene.MustardSimplify_Settings
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
         # Extract type of modifiers
         rna = bpy.ops.object.modifier_add.get_rna_type()
@@ -113,7 +114,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
                 add_modifier(modifiers, m, disp_name, icon, simplify)
 
-            if settings.debug:
+            if addon_prefs.debug:
                 print("Mustard Simplify - Modifiers List generated")
 
         return context.window_manager.invoke_props_dialog(self, width=800)

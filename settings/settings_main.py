@@ -3,14 +3,7 @@ from bpy.props import *
 
 
 class MustardSimplify_Settings(bpy.types.PropertyGroup):
-    # Main Settings definitions
-    # UI definitions
-    advanced: BoolProperty(name="Advanced Options",
-                           description="Unlock advanced options",
-                           default=False)
-    debug: BoolProperty(name="Debug mode",
-                        description="Unlock debug mode.\nThis will generate more messaged in the console.\nEnable it only if you encounter problems, as it might degrade general Blender performance",
-                        default=False)
+
     # Modifiers
     blender_simplify: BoolProperty(name="Blender Simplify",
                                    description="Enable Blender Simplify",
