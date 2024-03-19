@@ -79,6 +79,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             objects = [x for x in bpy.data.objects if not x in [x for x in settings.exception_collection.objects]]
 
         # Create list of modifiers to simplify
+        modifiers_ignore = settings.modifiers
         if settings.modifiers:
 
             chosen_mods = scene.MustardSimplify_SetModifiers.modifiers
@@ -99,10 +100,13 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             if addon_prefs.debug:
                 print("\n ----------- Object: " + obj.name + " -----------")
 
-            # Modifiers
+            # Object Modifiers
             if settings.modifiers and (eo.modifiers if eo is not None else True):
 
-                modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
+                if obj.type == "MESH":
+                    modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
+                else:
+                    modifiers = [x for x in obj.grease_pencil_modifiers if not x.type in modifiers_ignore]
 
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.modifiers.clear()
@@ -129,7 +133,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 print("Modifier " + mod.name + " reverted to viewport_hide: " + str(status) + ".")
 
             # Shape Keys
-            if settings.shape_keys and obj.type == "MESH" and (eo.shape_keys if eo != None else True):
+            if settings.shape_keys and obj.type == "MESH" and (eo.shape_keys if eo is not None else True):
 
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
@@ -161,7 +165,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                     print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
 
             # Normals Auto Smooth
-            if settings.normals_auto_smooth and obj.type == "MESH" and (eo.normals_auto_smooth if eo is not None else True):
+            if settings.normals_auto_smooth and obj.type == "MESH" and (
+            eo.normals_auto_smooth if eo is not None else True):
 
                 def get_status_norm_autosmooth(obj):
                     for modifier in [x for x in obj.modifiers if x.type == "NODES"]:

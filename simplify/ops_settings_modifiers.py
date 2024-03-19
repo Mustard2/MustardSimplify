@@ -8,6 +8,7 @@ class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
     disp_name: StringProperty(default="")
     icon: StringProperty(default="")
     simplify: BoolProperty(default=True)
+    type: StringProperty(default="OBJECT")
 
 
 class MustardSimplify_SetModifiers(bpy.types.PropertyGroup):
@@ -30,7 +31,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        def add_modifier(collection, name, disp_name, icon, simplify):
+        def add_modifier(collection, name, disp_name, icon, simplify, type):
             for el in collection:
                 if el.name == name:
                     return False
@@ -39,6 +40,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             add_item.disp_name = disp_name
             add_item.icon = icon
             add_item.simplify = simplify
+            add_item.type = type
             return True
 
         scene = bpy.context.scene
@@ -46,7 +48,8 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
         addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
-        # Extract type of modifiers
+
+        # Extract type of modifiers for Objects
         rna = bpy.ops.object.modifier_add.get_rna_type()
         mods_list = rna.bl_rna.properties['type'].enum_items.keys()
 
@@ -56,7 +59,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
             modifiers.clear()
 
-            for m in mods_list:
+            for m in [x for x in mods_list if not "GREASE_PENCIL_" in x]:
 
                 # Change the displayed name
                 disp_name = m.replace("_", " ")
@@ -111,10 +114,54 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 if m in settings.modifiers_ignore:
                     simplify = False
 
-                add_modifier(modifiers, m, disp_name, icon, simplify)
+                add_modifier(modifiers, m, disp_name, icon, simplify, "OBJECT")
 
             if addon_prefs.debug:
-                print("Mustard Simplify - Modifiers List generated")
+                print("Mustard Simplify - Modifiers List generated for Objects")
+
+
+        # Extract type of modifiers for Grease Pencil
+        rna = bpy.ops.object.gpencil_modifier_add.get_rna_type()
+        mods_list = rna.bl_rna.properties['type'].enum_items.keys()
+
+        # Make the list
+        # This is done at run-time, so it should be version agnostic
+        if len(mods_list) != len(modifiers):
+
+            for m in mods_list:
+
+                # Change the displayed name
+                disp_name = m.replace("_", " ")
+                if "GP_" in m:
+                    disp_name = disp_name[3:]
+                disp_name = disp_name.title()
+
+                icon = "MOD_" + m[3:]
+                simplify = True
+
+                # Manage single exceptions
+                if m in ["GP_TEXTURE"]:
+                    icon = "TEXTURE"
+                elif m in ['GP_WEIGHT_ANGLE', 'GP_WEIGHT_PROXIMITY']:
+                    icon = "MOD_VERTEX_WEIGHT"
+                elif m in ["GP_MULTIPLY"]:
+                    icon = "GP_MULTIFRAME_EDITING"
+                elif m in ["GP_SUBDIV"]:
+                    icon = "MOD_SUBSURF"
+                elif m in ["GP_THICK"]:
+                    icon = "MOD_THICKNESS"
+                elif m in ["GP_HOOK"]:
+                    icon = m[3:]
+                elif m in ["GP_COLOR"]:
+                    icon = "MOD_HUE_SATURATION"
+
+                if m in settings.modifiers_ignore:
+                    simplify = False
+
+                add_modifier(modifiers, m, disp_name, icon, simplify, "GPENCIL")
+
+            if addon_prefs.debug:
+                print("Mustard Simplify - Modifiers List generated for Grease Pencil objects")
 
         return context.window_manager.invoke_props_dialog(self, width=800)
 
@@ -126,11 +173,31 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         layout = self.layout
         box = layout.box()
 
+        box.label(text="Objects")
+
         row = box.row()
         col = row.column()
 
-        for m in modifiers:
+        for m in [x for x in modifiers if x.type == "OBJECT"]:
             if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
+                col = row.column()
+            row2 = col.row()
+            row2.prop(m, 'simplify', text="")
+            # Avoid missing icon error
+            try:
+                row2.label(text=m.disp_name, icon=m.icon)
+            except:
+                row2.label(text=m.name, icon="BLANK1")
+
+        box = layout.box()
+
+        box.label(text="Grease Pencils")
+
+        row = box.row()
+        col = row.column()
+
+        for m in [x for x in modifiers if x.type == "GREASE_PENCIL"]:
+            if m.name in ["GP_TEXTURE", "GP_ARRAY", "GP_ARMATURE", "GP_COLOR"]:
                 col = row.column()
             row2 = col.row()
             row2.prop(m, 'simplify', text="")

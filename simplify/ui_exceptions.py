@@ -85,14 +85,24 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
             item_in_exception_collection = item.exception in [x for x in settings.exception_collection.objects]
 
         # Make sure your code supports all 3 layout types
+        icon_suffix = item.exception.type if item.exception.type != "GPENCIL" else "GREASEPENCIL"
+
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.prop(item.exception, 'name', text="", icon="OUTLINER_OB_" + item.exception.type, emboss=False,
-                        translate=False)
+            try:
+                layout.prop(item.exception, 'name', text="", icon="OUTLINER_OB_" + icon_suffix, emboss=False,
+                            translate=False)
+            except:
+                layout.prop(item.exception, 'name', text="", icon="BLANK1", emboss=False,
+                            translate=False)
 
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.prop(item.exception, 'name', text="", icon="OUTLINER_OB_" + item.exception.type, emboss=False,
-                        translate=False)
+            try:
+                layout.prop(item.exception, 'name', text="", icon="OUTLINER_OB_" + icon_suffix, emboss=False,
+                            translate=False)
+            except:
+                layout.prop(item.exception, 'name', text="", icon="BLANK1", emboss=False,
+                            translate=False)
 
         row = layout.row(align=True)
         draw_icon(row, "COLLECTION_COLOR_01", item_in_exception_collection)

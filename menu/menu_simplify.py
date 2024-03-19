@@ -93,15 +93,14 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         box = box.box()
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
-                            item_in_exception_collection = obj.exception in [x for x in
-                                                                             settings.exception_collection.objects]
+                            item_in_exception_collection = obj.exception in [x for x in settings.exception_collection.objects]
                         box.enabled = not item_in_exception_collection
 
                         col = box.column(align=True)
                         col.label(text="Properties to Simplify", icon="PROPERTIES")
 
                         row = col.row()
-                        row.enabled = obj.exception.type == "MESH"
+                        row.enabled = obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
                         row.prop(obj, 'modifiers')
 
                         row = col.row()
