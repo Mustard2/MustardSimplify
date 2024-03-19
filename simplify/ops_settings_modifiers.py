@@ -64,6 +64,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 # Change the displayed name
                 disp_name = m.replace("_", " ")
                 disp_name = disp_name.title()
+                disp_name = disp_name.replace("Uv", "UV")
 
                 icon = "MOD_" + m
                 simplify = True
@@ -135,6 +136,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 if "GP_" in m:
                     disp_name = disp_name[3:]
                 disp_name = disp_name.title()
+                disp_name = disp_name.replace("Uv", "UV")
 
                 icon = "MOD_" + m[3:]
                 simplify = True
@@ -163,7 +165,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             if addon_prefs.debug:
                 print("Mustard Simplify - Modifiers List generated for Grease Pencil objects")
 
-        return context.window_manager.invoke_props_dialog(self, width=800)
+        return context.window_manager.invoke_props_dialog(self, width=780)
 
     def draw(self, context):
 
