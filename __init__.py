@@ -1,5 +1,5 @@
-# MustardUI addon
-# GitHub page: https://github.com/Mustard2/MustardUI
+# Mustard Simplify addon
+# GitHub page: https://github.com/Mustard2/MustardSimplify/
 
 # Add-on information
 bl_info = {
@@ -9,6 +9,7 @@ bl_info = {
     "version": (0, 4, 0),
     "blender": (4, 1, 0),
     "warning": "",
+    "doc_url": "https://github.com/Mustard2/MustardSimplify/wiki",
     "category": "3D View",
 }
 
