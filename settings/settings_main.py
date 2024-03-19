@@ -3,7 +3,6 @@ from bpy.props import *
 
 
 class MustardSimplify_Settings(bpy.types.PropertyGroup):
-
     # Modifiers
     blender_simplify: BoolProperty(name="Blender Simplify",
                                    description="Enable Blender Simplify",
@@ -71,6 +70,9 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     exception_collection: PointerProperty(type=bpy.types.Collection,
                                           name="Collection",
                                           description="Collection whose Objects will be considered full exceptions")
+    exception_include_subcollections: BoolProperty(default=True,
+                                                   name="Include Objects in Sub-collections",
+                                                   description="Objects in Sub-section of the selected collection are considered full exceptions.\nDisable to add only the Objects directly in the added collection")
 
     # Internal Settings
     simplify_fastnormals_status: BoolProperty(default=False)

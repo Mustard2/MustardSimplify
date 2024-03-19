@@ -93,7 +93,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         box = box.box()
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
-                            item_in_exception_collection = obj.exception in [x for x in settings.exception_collection.objects]
+                            item_in_exception_collection = obj.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
                         box.enabled = not item_in_exception_collection
 
                         col = box.column(align=True)
@@ -119,6 +119,9 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row = box.row()
                 row.enabled = not settings.simplify_status
                 row.prop_search(settings, "exception_collection", bpy.data, "collections", text="")
+                row = box.row()
+                row.enabled = not settings.simplify_status
+                row.prop(settings, "exception_include_subcollections")
 
         if addon_prefs.advanced:
             box = layout.box()

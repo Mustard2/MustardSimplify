@@ -76,7 +76,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         # Remove objects in the exception collection
         objects = [x for x in bpy.data.objects if x.override_library is None]
         if settings.exception_collection is not None:
-            objects = [x for x in bpy.data.objects if not x in [x for x in settings.exception_collection.objects]]
+            objects = [x for x in bpy.data.objects if not x in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
 
         # Create list of modifiers to simplify
         modifiers_ignore = settings.modifiers

@@ -82,7 +82,7 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
 
         item_in_exception_collection = False
         if settings.exception_collection is not None:
-            item_in_exception_collection = item.exception in [x for x in settings.exception_collection.objects]
+            item_in_exception_collection = item.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
 
         # Make sure your code supports all 3 layout types
         icon_suffix = item.exception.type if item.exception.type != "GPENCIL" else "GREASEPENCIL"
