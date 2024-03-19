@@ -26,7 +26,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         return not settings.simplify_status
 
     def execute(self, context):
-
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -123,7 +122,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
         scene = bpy.context.scene
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
-        settings = bpy.context.scene.MustardSimplify_Settings
 
         layout = self.layout
         box = layout.box()

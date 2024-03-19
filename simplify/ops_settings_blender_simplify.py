@@ -11,18 +11,14 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
         return True
 
     def execute(self, context):
-
         return {'FINISHED'}
 
     def invoke(self, context, event):
-
         return context.window_manager.invoke_props_dialog(self, width=400)
 
     def draw(self, context):
 
         scene = context.scene
-        modifiers = scene.MustardSimplify_SetModifiers.modifiers
-        settings = bpy.context.scene.MustardSimplify_Settings
 
         layout = self.layout
         layout.use_property_split = True

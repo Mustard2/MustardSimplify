@@ -32,7 +32,6 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                 return 0
 
         scene = context.scene
-        settings = scene.MustardSimplify_Settings
         addon_prefs = context.preferences.addons["MustardSimplify"].preferences
 
         if addon_prefs.debug:

@@ -20,7 +20,6 @@ class MUSTARDSIMPLIFY_OT_MenuShapeKeysSettings(bpy.types.Operator):
 
     def draw(self, context):
         scene = bpy.context.scene
-        modifiers = scene.MustardSimplify_SetModifiers.modifiers
         settings = bpy.context.scene.MustardSimplify_Settings
 
         layout = self.layout

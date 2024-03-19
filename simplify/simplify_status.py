@@ -51,12 +51,17 @@ class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
 
 def register():
     bpy.utils.register_class(MustardSimplify_ModifierStatus)
+
     bpy.utils.register_class(MustardSimplify_ShapeKeysStatus)
+
     bpy.utils.register_class(MustardSimplify_ObjectStatus)
     bpy.types.Object.MustardSimplify_Status = bpy.props.PointerProperty(type=MustardSimplify_ObjectStatus)
+
     bpy.utils.register_class(MustardSimplify_SceneStatus)
     bpy.types.Scene.MustardSimplify_Status = bpy.props.PointerProperty(type=MustardSimplify_SceneStatus)
+
     bpy.utils.register_class(MustardSimplify_Exception)
+
     bpy.utils.register_class(MustardSimplify_Exceptions)
     bpy.types.Scene.MustardSimplify_Exceptions = bpy.props.PointerProperty(type=MustardSimplify_Exceptions)
 
