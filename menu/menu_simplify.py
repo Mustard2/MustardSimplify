@@ -50,13 +50,21 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
             col = box.column(align=True)
             col.enabled = not settings.simplify_status
             row = col.row()
+            row.prop(settings, "objects")
+            row.operator("mustard_simplify.menu_objects_select", icon="PREFERENCES", text="")
+
+            row = col.row()
             row.prop(settings, "modifiers")
             row.operator("mustard_simplify.menu_modifiers_select", icon="PREFERENCES", text="")
+
             row = col.row()
             row.prop(settings, "shape_keys")
             row.operator("mustard_simplify.menu_shape_keys_settings", icon="PREFERENCES", text="")
+
             col.prop(settings, "drivers")
+
             col.prop(settings, "physics")
+
             col.prop(settings, "normals_auto_smooth")
 
         box = layout.box()
@@ -98,6 +106,9 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
 
                         col = box.column(align=True)
                         col.label(text="Properties to Simplify", icon="PROPERTIES")
+
+                        row = col.row()
+                        row.prop(obj, 'visibility')
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
