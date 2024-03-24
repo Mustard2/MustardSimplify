@@ -78,6 +78,18 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         if settings.exception_collection is not None:
             objects = [x for x in bpy.data.objects if not x in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
 
+        # Create list of objects to simplify
+        objects_ignore = settings.modifiers
+        if settings.modifiers:
+
+            chosen_objs = scene.MustardSimplify_SetObjects.objects
+
+            # If the user hasn't used the Objects menu, use the default settings
+            if not len(chosen_objs):
+                objects_ignore = settings.objects_ignore
+            else:
+                objects_ignore = [x.name for x in chosen_objs if not x.simplify]
+
         # Create list of modifiers to simplify
         modifiers_ignore = settings.modifiers
         if settings.modifiers:
@@ -100,6 +112,19 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             if addon_prefs.debug:
                 print("\n ----------- Object: " + obj.name + " -----------")
 
+            if settings.objects and (eo.visibility if eo is not None else True) and not obj.type in objects_ignore:
+                if self.enable_simplify:
+                    status = obj.hide_viewport
+                    obj.MustardSimplify_Status.visibility = status
+                    obj.hide_viewport = True
+                    if addon_prefs.debug:
+                        print("Object " + obj.name + " hidden (previous viewport_hide: " + str(status) + ").")
+                else:
+                    status = obj.MustardSimplify_Status.visibility
+                    obj.hide_viewport = status
+                    if addon_prefs.debug:
+                        print("Object " + obj.name + " reverted to hide_viewport: " + str(status) + ").")
+
             # Object Modifiers
             if settings.modifiers and (eo.modifiers if eo is not None else True):
 
@@ -119,7 +144,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         add_prop_status(obj.MustardSimplify_Status.modifiers, [mod.name, status])
                         mod.show_viewport = False
                         if addon_prefs.debug:
-                            print("Modifier " + mod.name + " disabled (previous viewport_hide: " + str(status) + ").")
+                            print("Modifier " + mod.name + " disabled (previous show_viewport: " + str(status) + ").")
                 else:
                     for mod in modifiers:
                         # Skip Normals Smooth modifier
@@ -130,7 +155,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         if name != "":
                             mod.show_viewport = status
                             if addon_prefs.debug:
-                                print("Modifier " + mod.name + " reverted to viewport_hide: " + str(status) + ".")
+                                print("Modifier " + mod.name + " reverted to show_viewport: " + str(status) + ".")
 
             # Shape Keys
             if settings.shape_keys and obj.type == "MESH" and (eo.shape_keys if eo is not None else True):
@@ -180,7 +205,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 def update_norm_autosmooth(obj, status):
 
                     if bpy.app.version < (4, 1, 0):
-                        obj.model_body.data.use_auto_smooth = status
+                        obj.data.use_auto_smooth = status
                         return
 
                     for modifier in [x for x in obj.modifiers if x.type == "NODES"]:

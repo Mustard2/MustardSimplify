@@ -2,7 +2,6 @@ import bpy
 from bpy.props import *
 
 
-# Classes to manage exceptions
 class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
     name: StringProperty(default="")
     disp_name: StringProperty(default="")
@@ -189,7 +188,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             try:
                 row2.label(text=m.disp_name, icon=m.icon)
             except:
-                row2.label(text=m.name, icon="BLANK1")
+                row2.label(text=m.disp_name, icon="BLANK1")
 
         box = layout.box()
 

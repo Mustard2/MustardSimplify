@@ -40,6 +40,11 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                       description="Disable Normals Auto Smooth",
                                       default=True)
 
+    # Objects
+    objects: BoolProperty(name="Objects",
+                          description="Hide objects",
+                          default=False)
+
     # UI Settings
     collapse_options: BoolProperty(name="Collapse",
                                    default=True)
@@ -80,6 +85,9 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
 
     # Modifiers to not simplify by default
     modifiers_ignore = ["ARMATURE", "HOOK"]
+
+    # Objects to not simplify by default
+    objects_ignore = ["MESH", "LIGHT", "CAMERA", "EMPTY", "ARMATURE", "CURVE", "SURFACE", "FONT"]
 
 
 def register():

@@ -50,13 +50,21 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
             col = box.column(align=True)
             col.enabled = not settings.simplify_status
             row = col.row()
+            row.prop(settings, "objects")
+            row.operator("mustard_simplify.menu_objects_select", icon="PREFERENCES", text="")
+
+            row = col.row()
             row.prop(settings, "modifiers")
             row.operator("mustard_simplify.menu_modifiers_select", icon="PREFERENCES", text="")
+
             row = col.row()
             row.prop(settings, "shape_keys")
             row.operator("mustard_simplify.menu_shape_keys_settings", icon="PREFERENCES", text="")
+
             col.prop(settings, "drivers")
+
             col.prop(settings, "physics")
+
             col.prop(settings, "normals_auto_smooth")
 
         box = layout.box()
@@ -94,10 +102,13 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
                             item_in_exception_collection = obj.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
-                        box.enabled = not item_in_exception_collection
+                        box.enabled = not item_in_exception_collection and not settings.simplify_status
 
                         col = box.column(align=True)
                         col.label(text="Properties to Simplify", icon="PROPERTIES")
+
+                        row = col.row()
+                        row.prop(obj, 'visibility')
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
