@@ -102,7 +102,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
                             item_in_exception_collection = obj.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
-                        box.enabled = not item_in_exception_collection
+                        box.enabled = not item_in_exception_collection and not settings.simplify_status
 
                         col = box.column(align=True)
                         col.label(text="Properties to Simplify", icon="PROPERTIES")
