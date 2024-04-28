@@ -19,6 +19,9 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
     bl_idname = "mustard_simplify.menu_modifiers_select"
     bl_label = "Select Modifiers to Simplify"
 
+    type: EnumProperty(items=[("OBJECT", "Objects", "Object", "MESH_DATA", 0),
+                              ("GPENCIL", "Grease Pencil", "Grease Pencil", "OUTLINER_DATA_GREASEPENCIL", 1)])
+
     @classmethod
     def poll(cls, context):
         # Enable operator only when the scene is not simplified
@@ -46,7 +49,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         settings = scene.MustardSimplify_Settings
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
         addon_prefs = context.preferences.addons["MustardSimplify"].preferences
-
 
         # Extract type of modifiers for Objects
         rna = bpy.ops.object.modifier_add.get_rna_type()
@@ -119,7 +121,6 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             if addon_prefs.debug:
                 print("Mustard Simplify - Modifiers List generated for Objects")
 
-
         # Extract type of modifiers for Grease Pencil
         rna = bpy.ops.object.gpencil_modifier_add.get_rna_type()
         mods_list = rna.bl_rna.properties['type'].enum_items.keys()
@@ -172,41 +173,39 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
 
         layout = self.layout
-        box = layout.box()
 
-        box.label(text="Objects")
+        layout.prop(self, "type", expand=True)
+
+        box = layout.box()
 
         row = box.row()
         col = row.column()
 
-        for m in [x for x in modifiers if x.type == "OBJECT"]:
-            if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
-                col = row.column()
-            row2 = col.row()
-            row2.prop(m, 'simplify', text="")
-            # Avoid missing icon error
-            try:
-                row2.label(text=m.disp_name, icon=m.icon)
-            except:
-                row2.label(text=m.disp_name, icon="BLANK1")
+        if self.type == "OBJECT":
 
-        box = layout.box()
+            for m in [x for x in modifiers if x.type == "OBJECT"]:
+                if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
+                    col = row.column()
+                row2 = col.row()
+                row2.prop(m, 'simplify', text="")
+                # Avoid missing icon error
+                try:
+                    row2.label(text=m.disp_name, icon=m.icon)
+                except:
+                    row2.label(text=m.disp_name, icon="BLANK1")
 
-        box.label(text="Grease Pencils")
+        if self.type == "GPENCIL":
 
-        row = box.row()
-        col = row.column()
-
-        for m in [x for x in modifiers if x.type == "GPENCIL"]:
-            if m.name in ["GP_TEXTURE", "GP_ARRAY", "GP_ARMATURE", "GP_COLOR"]:
-                col = row.column()
-            row2 = col.row()
-            row2.prop(m, 'simplify', text="")
-            # Avoid missing icon error
-            try:
-                row2.label(text=m.disp_name, icon=m.icon)
-            except:
-                row2.label(text=m.disp_name, icon="BLANK1")
+            for m in [x for x in modifiers if x.type == "GPENCIL"]:
+                if m.name in ["GP_TEXTURE", "GP_ARRAY", "GP_ARMATURE", "GP_COLOR"]:
+                    col = row.column()
+                row2 = col.row()
+                row2.prop(m, 'simplify', text="")
+                # Avoid missing icon error
+                try:
+                    row2.label(text=m.disp_name, icon=m.icon)
+                except:
+                    row2.label(text=m.disp_name, icon="BLANK1")
 
 
 def register():
