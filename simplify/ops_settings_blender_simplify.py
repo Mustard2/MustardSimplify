@@ -40,6 +40,8 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
         if context.engine in 'BLENDER_EEVEE_NEXT':
             col = flow.column()
             col.prop(rd, "simplify_shadows", text="Shadow Resolution")
+        col = flow.column()
+        col.prop(rd, "use_simplify_normals", text="Normals")
 
         # Render
         box = layout.box()
