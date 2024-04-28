@@ -19,7 +19,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         settings = scene.MustardSimplify_Settings
 
         if not settings.simplify_status:
-            return settings.modifiers or settings.shape_keys or settings.physics or settings.drivers or settings.normals_auto_smooth
+            return settings.blender_simplify or settings.modifiers or settings.shape_keys or settings.physics or settings.drivers or settings.normals_auto_smooth
         else:
             return True
 
