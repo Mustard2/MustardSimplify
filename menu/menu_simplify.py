@@ -43,7 +43,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         if not settings.collapse_options:
             row = box.row()
             col = row.column()
-            col.enabled = not settings.simplify_status
+            row.enabled = not settings.simplify_status
             col.prop(settings, "blender_simplify")
             row.operator("mustard_simplify.menu_blender_simplify_settings", icon="PREFERENCES", text="")
 
