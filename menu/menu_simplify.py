@@ -125,6 +125,8 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
                         row.prop(obj, 'normals_auto_smooth')
+                        # make it clear that exception object's auto smooth is related to the global auto smooth option!
+                        row.enabled = settings.normals_auto_smooth
 
             else:
 
