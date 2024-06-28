@@ -78,6 +78,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
 
             row = box.row()
             row.prop(settings, 'exception_type', expand=True)
+            row.enabled = not settings.simplify_status
 
             if settings.exception_type == "OBJECT":
 
