@@ -106,10 +106,11 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
 
         row = layout.row(align=True)
         draw_icon(row, "COLLECTION_COLOR_01", item_in_exception_collection)
-        draw_icon(row, "MODIFIER", item.modifiers)
-        draw_icon(row, "SHAPEKEY_DATA", item.shape_keys)
-        draw_icon(row, "DRIVER", item.drivers)
-        draw_icon(row, "NORMALS_FACE", item.normals_auto_smooth)
+        # the 'AND' condition here is to not draw icons for the disabled settings if the global one is disabled
+        draw_icon(row, "MODIFIER", item.modifiers and settings.modifiers)
+        draw_icon(row, "SHAPEKEY_DATA", item.shape_keys and settings.shape_keys)
+        draw_icon(row, "DRIVER", item.drivers and settings.drivers)
+        draw_icon(row, "NORMALS_FACE", item.normals_auto_smooth and settings.normals_auto_smooth)
 
 
 def register():
