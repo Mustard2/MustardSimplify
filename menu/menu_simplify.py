@@ -1,6 +1,7 @@
 import bpy
 
 from . import MainPanel
+from .. import __package__ as base_package
 
 
 class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
@@ -12,7 +13,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
         settings = scene.MustardSimplify_Settings
-        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
+        addon_prefs = context.preferences.addons[base_package].preferences
 
         if settings.simplify_status:
             op = layout.operator("mustard_simplify.scene", text="Un-Simplify Scene",
@@ -38,8 +39,9 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         row.prop(settings, 'collapse_options', text="",
                  icon="RIGHTARROW" if settings.collapse_options else "DOWNARROW_HLT", emboss=False)
         row.label(text="Options")
-        row.operator("mustard_simplify.openlink", text="",
-                     icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#simplify"
+        if addon_prefs.wiki:
+            row.operator("mustard_simplify.openlink", text="",
+                         icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#simplify"
         if not settings.collapse_options:
             row = box.row()
             col = row.column()
@@ -72,8 +74,9 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         row.prop(settings, 'collapse_exceptions', text="",
                  icon="RIGHTARROW" if settings.collapse_exceptions else "DOWNARROW_HLT", emboss=False)
         row.label(text="Exceptions")
-        row.operator("mustard_simplify.openlink", text="",
-                     icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#exceptions"
+        if addon_prefs.wiki:
+            row.operator("mustard_simplify.openlink", text="",
+                         icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#exceptions"
         if not settings.collapse_exceptions:
 
             row = box.row()

@@ -37,9 +37,6 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
         col.prop(rd, "simplify_child_particles", text="Max Child Particles")
         col = flow.column()
         col.prop(rd, "simplify_volumes", text="Volume Resolution")
-        if context.engine in 'BLENDER_EEVEE_NEXT':
-            col = flow.column()
-            col.prop(rd, "simplify_shadows", text="Shadow Resolution")
         col = flow.column()
         col.prop(rd, "use_simplify_normals", text="Normals")
 
@@ -54,9 +51,6 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
         col.prop(rd, "simplify_subdivision_render", text="Max Subdivision")
         col = flow.column()
         col.prop(rd, "simplify_child_particles_render", text="Max Child Particles")
-        if context.engine in 'BLENDER_EEVEE_NEXT':
-            col = flow.column()
-            col.prop(rd, "simplify_shadows_render", text="Shadow Resolution")
 
 
 def register():
