@@ -67,7 +67,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
         # Gather Objects
         objects = []
-        for obj in bpy.data.objects:
+        for obj in scene.objects:
             objects.append(obj)
             if obj.data is not None:
                 objects.append(obj.data)
