@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import *
+from .. import __package__ as base_package
 
 
 # Addon preferences can be accessed with
@@ -7,7 +8,7 @@ from bpy.props import *
 # ...
 # addon_prefs = bpy.context.preferences.addons[base_package].preferences
 class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
-    bl_idname = "MustardSimplify"
+    bl_idname = base_package
 
     # Wiki links
     wiki: BoolProperty(name="Show Wiki/Help Buttons",
