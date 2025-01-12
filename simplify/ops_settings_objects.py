@@ -44,7 +44,7 @@ class MUSTARDSIMPLIFY_OT_MenuObjectSelect(bpy.types.Operator):
         scene = bpy.context.scene
         settings = scene.MustardSimplify_Settings
         objects = scene.MustardSimplify_SetObjects.objects
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         # Extract type of Objects
         rna = bpy.ops.object.add.get_rna_type()

@@ -10,7 +10,7 @@ class MUSTARDSIMPLIFY_PT_Tools(MainPanel, bpy.types.Panel):
     bl_options = {"DEFAULT_CLOSED"}
 
     def draw(self, context):
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         layout = self.layout
 

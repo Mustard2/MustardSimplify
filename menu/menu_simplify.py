@@ -13,7 +13,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
         scene = context.scene
         layout = self.layout
         settings = scene.MustardSimplify_Settings
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         if settings.simplify_status:
             op = layout.operator("mustard_simplify.scene", text="Un-Simplify Scene",

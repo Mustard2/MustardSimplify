@@ -33,7 +33,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                 return 0
 
         scene = context.scene
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         if addon_prefs.debug:
             print("\n ----------- MUSTARD SIMPLIFY DATA REMOVAL LOG -----------\n")
@@ -103,7 +103,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
     def draw(self, context):
 
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         layout = self.layout
 
