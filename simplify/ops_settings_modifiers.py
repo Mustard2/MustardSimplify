@@ -49,7 +49,7 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         scene = bpy.context.scene
         settings = scene.MustardSimplify_Settings
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
-        addon_prefs = context.preferences.addons[base_package].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         # Extract type of modifiers for Objects
         rna = bpy.ops.object.modifier_add.get_rna_type()

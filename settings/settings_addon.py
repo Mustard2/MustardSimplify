@@ -5,7 +5,7 @@ from bpy.props import *
 # Addon preferences can be accessed with
 # from .. import __package__ as base_package
 # ...
-# addon_prefs = context.preferences.addons[base_package].preferences
+# addon_prefs = bpy.context.preferences.addons[base_package].preferences
 class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
     bl_idname = "MustardSimplify"
 

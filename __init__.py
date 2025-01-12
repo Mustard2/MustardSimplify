@@ -7,7 +7,7 @@ bl_info = {
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
     "version": (0, 5, 0),
-    "blender": (4, 1, 0),
+    "blender": (4, 3, 0),
     "warning": "",
     "doc_url": "https://github.com/Mustard2/MustardSimplify/wiki",
     "category": "3D View",
