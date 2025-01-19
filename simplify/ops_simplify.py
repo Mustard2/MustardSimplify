@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import *
 from mathutils import Vector, Color
+from .. import __package__ as base_package
 
 
 class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
@@ -66,7 +67,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
         scene = context.scene
         settings = scene.MustardSimplify_Settings
-        addon_prefs = context.preferences.addons["MustardSimplify"].preferences
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         # BLENDER SIMPLIFY
         rd = context.scene.render
@@ -76,9 +77,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         # OBJECTS
 
         # Remove objects in the exception collection
-        objects = [x for x in bpy.data.objects if x.override_library is None]
+        objects = [x for x in context.scene.objects if x.override_library is None]
         if settings.exception_collection is not None:
-            objects = [x for x in bpy.data.objects if not x in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
+            objects = [x for x in context.scene.objects if not x in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
 
         # Create list of objects to simplify
         objects_ignore = settings.modifiers
@@ -130,10 +131,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             # Object Modifiers
             if settings.modifiers and (eo.modifiers if eo is not None else True):
 
-                if obj.type == "MESH":
-                    modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
-                else:
-                    modifiers = [x for x in obj.grease_pencil_modifiers if not x.type in modifiers_ignore]
+                modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
 
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.modifiers.clear()
