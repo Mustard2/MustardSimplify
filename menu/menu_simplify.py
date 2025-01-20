@@ -117,24 +117,20 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
                         row.prop(obj, 'modifiers')
-                        # the exception object's modifiers is relevant only if the global modifiers option is enabled
                         row.enabled = settings.modifiers
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
                         row.prop(obj, 'shape_keys')
-                        # the exception object's shape_keys is relevant only if the global shape_keys option is enabled
                         row.enabled = settings.shape_keys
 
                         row = col.row()
                         row.prop(obj, 'drivers')
-                        # the exception object's drivers is relevant only if the global drivers option is enabled
                         row.enabled = settings.drivers
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
                         row.prop(obj, 'normals_auto_smooth')
-                        # the exception object's normals auto smooth is relevant only if the global normals auto smooth option is enabled
                         row.enabled = settings.normals_auto_smooth
 
             else:
@@ -164,7 +160,7 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                     col.prop(settings, "execution_times_frames_rate")
 
                 box2 = box.box()
-                for modifier in modifiers_with_time:
+                for modifier in sorted(modifiers_with_time, key=lambda x: x.name):
                     if modifier.execution_time:
                         row2 = box2.row()
                         row2.label(text=modifier.disp_name, icon=modifier.icon)

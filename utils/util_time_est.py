@@ -37,6 +37,7 @@ def update_animation_execution_time(scene):
         start = time.time()
 
     if not settings.execution_times:
+        settings.execution_times_overhead = time.time() - start
         return
 
     if settings.execution_times_frames != 0:
