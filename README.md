@@ -12,13 +12,11 @@ The add-on essentially disables some scene/object features that affect Viewport 
 
 It acts on the Objects in the scene non-destructively (no mesh is edited in any way) and remembering the settings before enabling Simplify. That is, disabling Simplify, the Object (modifier viewport visibility status shape key mute status, etc..) will be reverted to pre-Simplify status.
 
-It does **not** hide any Object from the scene. If you have very heavy mesh, consider to disable them while animating.
-
 ## How to install
 
-Install the .py file (**not** the archive file) as a standard Blender add-on.
+Download the [latest version](https://github.com/Mustard2/MustardSimplify/releases/tag/2025.1.0) from the Releases page, and install it as a Blender Extension or a Legacy Blender add-on.
 
-*Or load the .py file in the Blender Text Editor and run it as a script, but the add-on will only be valid in the current scene and in the current Blender session.*
+**Do not download the code from the repository! Only use the .zip files in the Release page.**
 
 ## How to use
 
