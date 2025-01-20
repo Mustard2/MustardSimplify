@@ -99,7 +99,13 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                              description="Frames between Execution Time computation updates.\nA small number can affect Viewport performance.\nSet to 0 to update at every frame",
                                              default=30,
                                              min=0)
-    # Internal: Frames for execution time
+    execution_time_order: EnumProperty(name="Execution Time list order",
+                                 default="NAME",
+                                 items=(
+                                     ("NAME", "Name", "Order by name", "SORTALPHA", 0),
+                                     ("TIME", "Time", "Order by time", "TIME", 1))
+                                       )
+    # Internal
     execution_times_frames: IntProperty(default=0)
     execution_times_overhead: FloatProperty(default=0.)
 

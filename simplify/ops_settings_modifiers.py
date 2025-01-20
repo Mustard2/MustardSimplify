@@ -1,7 +1,7 @@
 import bpy
 from bpy.props import *
 from .. import utils
-from ..utils.util_time_est import update_all_execution_time
+from ..utils.execution_time import update_all_execution_time
 from .. import __package__ as base_package
 
 

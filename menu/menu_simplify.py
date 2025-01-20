@@ -105,7 +105,8 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         box = box.box()
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
-                            item_in_exception_collection = obj.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
+                            item_in_exception_collection = obj.exception in [x for x in (
+                                settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
                         box.enabled = not item_in_exception_collection and not settings.simplify_status
 
                         col = box.column(align=True)
@@ -163,13 +164,17 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                     col.prop(settings, "execution_times_frames_rate")
 
                 box2 = box.box()
-                for modifier in sorted(modifiers_with_time, key=lambda x: x.name):
-                    if modifier.execution_time:
-                        row2 = box2.row()
-                        row2.label(text=modifier.disp_name, icon=modifier.icon)
-                        row2.scale_x = 0.3
-                        row2.alert = modifier.time > 0.1
-                        row2.label(text=str(int(modifier.time * 1000)) + " ms")
+                row2 = box2.row()
+                row2.prop(settings, 'execution_time_order', expand=True)
+                row2.scale_y = 1.2
+                for modifier in sorted(modifiers_with_time, key=(lambda x: x.name) if
+                                       settings.execution_time_order == "NAME" else (lambda y: int(y.time*1000)),
+                                       reverse=settings.execution_time_order == "TIME"):
+                    row2 = box2.row()
+                    row2.label(text=modifier.disp_name, icon=modifier.icon)
+                    row2.alert = modifier.time > 0.1
+                    row2.scale_x = 0.3
+                    row2.label(text=str(int(modifier.time * 1000)) + " ms")
 
                 if addon_prefs.debug:
                     box2.separator()

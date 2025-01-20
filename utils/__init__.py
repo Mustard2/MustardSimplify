@@ -1,15 +1,15 @@
 from . import ops_link
 from . import ops_reset
-from . import util_time_est
+from . import execution_time
 
 
 def register():
     ops_link.register()
     ops_reset.register()
-    util_time_est.register()
+    execution_time.register()
 
 
 def unregister():
-    util_time_est.unregister()
+    execution_time.unregister()
     ops_reset.unregister()
     ops_link.unregister()
