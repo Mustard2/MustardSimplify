@@ -1,8 +1,12 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/501b9c31-c974-4715-aef5-f38ff3a7c17e" width="200" />
+</p>
+
 # Mustard Simplify
 
-A scene simplifier for Blender to increase viewport performance.
+<img align="right" src="https://github.com/user-attachments/assets/30406ac1-b039-49ca-a7ec-5391e160439e" alt="drawing" width="200"/>
 
-<img src="https://i.ibb.co/MhDxJ28/F4p-EU92-Xs-AE4-Qzw.jpg" border="0" />
+A scene simplifier for Blender to increase viewport performance.
 
 The add-on essentially disables some scene/object features that affect Viewport performance with one click.
 
