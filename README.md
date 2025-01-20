@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/501b9c31-c974-4715-aef5-f38ff3a7c17e" width="200" />
+  <img src="https://github.com/user-attachments/assets/59d43718-e0f7-4cf3-88e4-d079df0d92fd" width="200" />
 </p>
 
 # Mustard Simplify
