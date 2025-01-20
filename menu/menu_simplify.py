@@ -157,7 +157,6 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
             if not settings.collapse_times:
                 row = box.row()
                 col = row.column()
-                col.enabled = not settings.simplify_status
                 row2 = col.row(align=True)
                 row2.prop(settings, "execution_times", icon="ANIM")
                 row2.operator("mustard_simplify.update_execution_time", icon="UV_SYNC_SELECT", text="")
