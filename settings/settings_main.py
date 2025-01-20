@@ -97,7 +97,8 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                   default=False)
     execution_times_frames_rate: IntProperty(name="Update Frame-rate",
                                              description="Frames between Execution Time computation updates.\nA small number can affect Viewport performance.\nSet to 0 to update at every frame",
-                                             default=30)
+                                             default=30,
+                                             min=0)
     # Internal: Frames for execution time
     execution_times_frames: IntProperty(default=0)
     execution_times_overhead: FloatProperty(default=0.)
@@ -109,4 +110,5 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.MustardSimplify_Settings
     bpy.utils.unregister_class(MustardSimplify_Settings)

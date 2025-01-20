@@ -249,5 +249,8 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_MenuModifiersSelect)
+
+    del bpy.types.Scene.MustardSimplify_SetModifiers
     bpy.utils.unregister_class(MustardSimplify_SetModifiers)
+
     bpy.utils.unregister_class(MustardSimplify_SetModifier)

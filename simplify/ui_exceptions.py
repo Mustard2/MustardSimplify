@@ -123,6 +123,8 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.mustardsimplify_exception_uilist_index
+
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_UL_Exceptions_UIList)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_RemoveException)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_AddException)

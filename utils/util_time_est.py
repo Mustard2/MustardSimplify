@@ -59,10 +59,12 @@ def update_animation_execution_time(scene):
     if depsgraph:
         for obj in context.scene.objects:
             if obj:
-                ob_eval = obj.evaluated_get(depsgraph)
-                for modifier in ob_eval.modifiers:
-                    if modifier.show_viewport and modifier.type in modifiers_to_compute:
-                        modifiers[modifier.type].time += modifier.execution_time
+                obj_modifiers_to_compute = [x for x in obj.modifiers if x.type in modifiers_to_compute]
+                if len(obj_modifiers_to_compute):
+                    ob_eval = obj.evaluated_get(depsgraph)
+                    for modifier in ob_eval.modifiers:
+                        if modifier.show_viewport and modifier.type in modifiers_to_compute:
+                            modifiers[modifier.type].time += modifier.execution_time
 
     settings.execution_times_frames += 1
 
@@ -76,6 +78,7 @@ class MUSTARDSIMPLIFY_OT_UpdateExecutionTime(bpy.types.Operator):
     bl_label = "Update Execution time"
 
     def execute(self, context):
+        bpy.context.view_layer.update()
         update_all_execution_time()
         self.report({'INFO'}, 'Mustard Simplify - Modifiers Execution Time has been updated.')
         return {'FINISHED'}
