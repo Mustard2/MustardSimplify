@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import *
 from mathutils import Vector, Color
+from ..utils.execution_time import update_all_execution_time
 from .. import __package__ as base_package
 
 
@@ -293,6 +294,10 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 print("\n ----------- Drivers disabled: " + str(num_drivers) + " -----------")
             if addon_prefs.debug and not self.enable_simplify:
                 print("\n ----------- Drivers reverted: " + str(num_drivers) + " -----------")
+
+        update_all_execution_time()
+        if addon_prefs.debug:
+            print("\n Updated modifiers Execution Times.")
 
         if addon_prefs.debug:
             print("\n")
