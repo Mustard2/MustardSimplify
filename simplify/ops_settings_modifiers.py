@@ -1,5 +1,7 @@
 import bpy
 from bpy.props import *
+from .. import utils
+from ..utils.util_time_est import update_all_execution_time
 from .. import __package__ as base_package
 
 
@@ -9,6 +11,9 @@ class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
     icon: StringProperty(default="")
     simplify: BoolProperty(default=True)
     type: StringProperty(default="OBJECT")
+    execution_time: BoolProperty(default=False)
+
+    time: FloatProperty(default=0.0)
 
 
 class MustardSimplify_SetModifiers(bpy.types.PropertyGroup):
@@ -161,12 +166,15 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             if addon_prefs.debug:
                 print("Mustard Simplify - Modifiers List generated")
 
-        return context.window_manager.invoke_props_dialog(self, width=780)
+        update_all_execution_time()
+
+        return context.window_manager.invoke_props_dialog(self, width=1024 if addon_prefs.debug else 900)
 
     def draw(self, context):
 
         scene = bpy.context.scene
         modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
         layout = self.layout
 
@@ -187,6 +195,12 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
                 # Avoid missing icon error
                 try:
                     row2.label(text=m.disp_name, icon=m.icon)
+                    row2.scale_x = 0.2
+                    row2.alert = m.time > 0.1
+                    if addon_prefs.debug:
+                        row2.label(text=str(int(m.time*1000)) + " ms" if m.execution_time else "")
+                    row2.scale_x = 1
+                    row2.prop(m, 'execution_time', text="", icon="TIME" if m.execution_time else "MOD_TIME")
                 except:
                     row2.label(text=m.disp_name, icon="BLANK1")
 
