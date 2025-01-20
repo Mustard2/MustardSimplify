@@ -73,9 +73,17 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.MustardSimplify_Exceptions
     bpy.utils.unregister_class(MustardSimplify_Exceptions)
+
     bpy.utils.unregister_class(MustardSimplify_Exception)
+
+    del bpy.types.Scene.MustardSimplify_Status
     bpy.utils.unregister_class(MustardSimplify_SceneStatus)
+
+    del bpy.types.Object.MustardSimplify_Status
     bpy.utils.unregister_class(MustardSimplify_ObjectStatus)
+
     bpy.utils.unregister_class(MustardSimplify_ShapeKeysStatus)
+
     bpy.utils.unregister_class(MustardSimplify_ModifierStatus)

@@ -50,6 +50,8 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                    default=True)
     collapse_exceptions: BoolProperty(name="Collapse",
                                       default=True)
+    collapse_times: BoolProperty(name="Collapse",
+                                  default=True)
     collapse_others: BoolProperty(name="Collapse",
                                   default=True)
 
@@ -89,6 +91,24 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     # Objects to not simplify by default
     objects_ignore = ["MESH", "LIGHT", "CAMERA", "EMPTY", "ARMATURE", "CURVE", "SURFACE", "FONT"]
 
+    # Execution Time
+    execution_times: BoolProperty(name="Enable Animations Update",
+                                  description="Automatically update the Execution Times during animations",
+                                  default=False)
+    execution_times_frames_rate: IntProperty(name="Update Frame-rate",
+                                             description="Frames between Execution Time computation updates.\nA small number can affect Viewport performance.\nSet to 0 to update at every frame",
+                                             default=30,
+                                             min=0)
+    execution_time_order: EnumProperty(name="Execution Time list order",
+                                 default="NAME",
+                                 items=(
+                                     ("NAME", "Name", "Order by name", "SORTALPHA", 0),
+                                     ("TIME", "Time", "Order by time", "TIME", 1))
+                                       )
+    # Internal
+    execution_times_frames: IntProperty(default=0)
+    execution_times_overhead: FloatProperty(default=0.)
+
 
 def register():
     bpy.utils.register_class(MustardSimplify_Settings)
@@ -96,4 +116,5 @@ def register():
 
 
 def unregister():
+    del bpy.types.Scene.MustardSimplify_Settings
     bpy.utils.unregister_class(MustardSimplify_Settings)

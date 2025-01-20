@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "MustardSimplify"
-version = "0.5.0"
+version = "2025.1.0"
 name = "Mustard Simplify"
 tagline = "A set of tools to simplify scenes for better viewport performance"
 maintainer = "Mustard"
@@ -16,5 +16,5 @@ blender_version_min = "4.3.0"
 # License conforming to https://spdx.org/licenses/ (use "SPDX: prefix)
 # https://docs.blender.org/manual/en/dev/advanced/extensions/licenses.html
 license = [
-  "SPDX:MIT",
+  "SPDX:GPL-3.0-or-later",
 ]

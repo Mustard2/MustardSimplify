@@ -105,7 +105,8 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         box = box.box()
                         item_in_exception_collection = False
                         if settings.exception_collection is not None:
-                            item_in_exception_collection = obj.exception in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
+                            item_in_exception_collection = obj.exception in [x for x in (
+                                settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]
                         box.enabled = not item_in_exception_collection and not settings.simplify_status
 
                         col = box.column(align=True)
@@ -117,24 +118,20 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
                         row.prop(obj, 'modifiers')
-                        # the exception object's modifiers is relevant only if the global modifiers option is enabled
                         row.enabled = settings.modifiers
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
                         row.prop(obj, 'shape_keys')
-                        # the exception object's shape_keys is relevant only if the global shape_keys option is enabled
                         row.enabled = settings.shape_keys
 
                         row = col.row()
                         row.prop(obj, 'drivers')
-                        # the exception object's drivers is relevant only if the global drivers option is enabled
                         row.enabled = settings.drivers
 
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
                         row.prop(obj, 'normals_auto_smooth')
-                        # the exception object's normals auto smooth is relevant only if the global normals auto smooth option is enabled
                         row.enabled = settings.normals_auto_smooth
 
             else:
@@ -145,6 +142,47 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row = box.row()
                 row.enabled = not settings.simplify_status
                 row.prop(settings, "exception_include_subcollections")
+
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        modifiers_with_time = [x for x in modifiers if x.execution_time]
+        if len(modifiers_with_time) > 0:
+            box = layout.box()
+            row = box.row()
+            row.prop(settings, 'collapse_times', text="",
+                     icon="RIGHTARROW" if settings.collapse_times else "DOWNARROW_HLT", emboss=False)
+            row.label(text="Execution Times")
+            if addon_prefs.wiki:
+                row.operator("mustard_simplify.openlink", text="",
+                             icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#execution-times"
+            if not settings.collapse_times:
+                row = box.row()
+                col = row.column()
+                row2 = col.row(align=True)
+                row2.prop(settings, "execution_times", icon="ANIM")
+                row2.operator("mustard_simplify.update_execution_time", icon="UV_SYNC_SELECT", text="")
+                if settings.execution_times:
+                    col.prop(settings, "execution_times_frames_rate")
+
+                box2 = box.box()
+                row2 = box2.row()
+                row2.prop(settings, 'execution_time_order', expand=True)
+                row2.scale_y = 1.2
+                for modifier in sorted(modifiers_with_time, key=(lambda x: x.name) if
+                                       settings.execution_time_order == "NAME" else (lambda y: int(y.time*1000)),
+                                       reverse=settings.execution_time_order == "TIME"):
+                    row2 = box2.row()
+                    row2.label(text=modifier.disp_name, icon=modifier.icon)
+                    row2.alert = modifier.time > 0.1
+                    row2.scale_x = 0.3
+                    row2.label(text=str(int(modifier.time * 1000)) + " ms")
+
+                if addon_prefs.debug:
+                    box2.separator()
+                    row2 = box2.row()
+                    row2.label(text="Execution Time Computation Overhead", icon="TIME")
+                    row2.scale_x = 0.3
+                    row2.alert = settings.execution_times_overhead > 0.1
+                    row2.label(text=str(int(settings.execution_times_overhead * 1000)) + " ms")
 
         if addon_prefs.advanced:
             box = layout.box()
