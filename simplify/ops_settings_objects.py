@@ -94,8 +94,6 @@ class MUSTARDSIMPLIFY_OT_MenuObjectSelect(bpy.types.Operator):
         layout = self.layout
         box = layout.box()
 
-        box.label(text="Objects")
-
         row = box.row()
         col = row.column()
 

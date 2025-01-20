@@ -146,6 +146,41 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
                 row.enabled = not settings.simplify_status
                 row.prop(settings, "exception_include_subcollections")
 
+        modifiers = scene.MustardSimplify_SetModifiers.modifiers
+        modifiers_with_time = [x for x in modifiers if x.execution_time]
+        if len(modifiers_with_time) > 0:
+            box = layout.box()
+            row = box.row()
+            row.prop(settings, 'collapse_times', text="",
+                     icon="RIGHTARROW" if settings.collapse_times else "DOWNARROW_HLT", emboss=False)
+            row.label(text="Execution Times")
+            if not settings.collapse_times:
+                row = box.row()
+                col = row.column()
+                col.enabled = not settings.simplify_status
+                row2 = col.row(align=True)
+                row2.prop(settings, "execution_times", icon="ANIM")
+                row2.operator("mustard_simplify.update_execution_time", icon="UV_SYNC_SELECT", text="")
+                if settings.execution_times:
+                    col.prop(settings, "execution_times_frames_rate")
+
+                box2 = box.box()
+                for modifier in modifiers_with_time:
+                    if modifier.execution_time:
+                        row2 = box2.row()
+                        row2.label(text=modifier.disp_name, icon=modifier.icon)
+                        row2.scale_x = 0.3
+                        row2.alert = modifier.time > 0.1
+                        row2.label(text=str(int(modifier.time * 1000)) + " ms")
+
+                if addon_prefs.debug:
+                    box2.separator()
+                    row2 = box2.row()
+                    row2.label(text="Execution Time Computation Overhead", icon="TIME")
+                    row2.scale_x = 0.3
+                    row2.alert = settings.execution_times_overhead > 0.1
+                    row2.label(text=str(int(settings.execution_times_overhead * 1000)) + " ms")
+
         if addon_prefs.advanced:
             box = layout.box()
             row = box.row()
