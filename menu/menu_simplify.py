@@ -150,6 +150,9 @@ class MUSTARDSIMPLIFY_PT_Simplify(MainPanel, bpy.types.Panel):
             row.prop(settings, 'collapse_times', text="",
                      icon="RIGHTARROW" if settings.collapse_times else "DOWNARROW_HLT", emboss=False)
             row.label(text="Execution Times")
+            if addon_prefs.wiki:
+                row.operator("mustard_simplify.openlink", text="",
+                             icon="QUESTION").url = "https://github.com/Mustard2/MustardSimplify/wiki#execution-times"
             if not settings.collapse_times:
                 row = box.row()
                 col = row.column()
