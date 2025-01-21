@@ -1,15 +1,15 @@
 schema_version = "1.0.0"
 
 id = "MustardSimplify"
-version = "2025.1.0"
+version = "2025.1.1"
 name = "Mustard Simplify"
 tagline = "Tool to simplify scenes for improved viewport performance"
 maintainer = "Mustard"
 type = "add-on"
 
-website = "https://github.com/Mustard2/MustardSimplify/"
+website = "https://github.com/Mustard2/MustardSimplify/issues"
 
-tags = ["3D View"]
+tags = ["Scene"]
 
 blender_version_min = "4.3.0"
 

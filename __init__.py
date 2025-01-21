@@ -6,11 +6,11 @@ bl_info = {
     "name": "Mustard Simplify",
     "description": "A set of tools to simplify scenes for better viewport performance",
     "author": "Mustard",
-    "version": (2025, 1, 0),
+    "version": (2025, 1, 1),
     "blender": (4, 3, 0),
     "warning": "",
     "doc_url": "https://github.com/Mustard2/MustardSimplify/wiki",
-    "category": "3D View",
+    "category": "Scene",
 }
 
 
