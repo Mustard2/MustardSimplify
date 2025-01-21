@@ -168,7 +168,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         for sk in obj.data.shape_keys.key_blocks:
                             status = sk.mute
                             add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
-                            attr = 'key_blocks["' + sk.name + '"].value'
+                            attr = f'key_blocks["{bpy.utils.escape_identifier(sk.name)}"].value'
                             value_bool = True if sk.value < 1e-5 else False
                             if has_driver(obj.data.shape_keys, attr):
                                 sk.mute = value_bool if (
