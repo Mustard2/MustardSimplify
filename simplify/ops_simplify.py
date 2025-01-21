@@ -80,7 +80,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         # Remove objects in the exception collection
         objects = [x for x in context.scene.objects if x.override_library is None]
         if settings.exception_collection is not None:
-            objects = [x for x in context.scene.objects if not x in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
+            objects = [x for x in context.scene.objects if not x in [x for x in (
+                settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]]
 
         # Create list of objects to simplify
         objects_ignore = settings.modifiers
@@ -192,7 +193,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
             # Normals Auto Smooth
             if settings.normals_auto_smooth and obj.type == "MESH" and (
-            eo.normals_auto_smooth if eo is not None else True):
+                    eo.normals_auto_smooth if eo is not None else True):
 
                 def get_status_norm_autosmooth(obj):
                     for modifier in [x for x in obj.modifiers if x.type == "NODES"]:
@@ -256,7 +257,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             num_drivers = 0
 
             for col in collections:
-                collection = eval("bpy.data.%s" % col)
+                collection = getattr(bpy.data, col)
                 if col == "objects":
                     collection = objects
                 for ob in collection:
@@ -266,7 +267,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         for driver in ob.animation_data.drivers:
                             dp = driver.data_path
                             pp = dp
-                            if dp.find("[") != 0: pp = ".%s" % dp
+                            if dp.find("[") != 0:
+                                pp = ".%s" % dp
                             resolved = False
                             try:
                                 dob = ob.path_resolve(dp)
@@ -276,8 +278,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
                             if not resolved:
                                 try:
-                                    dob = eval('bpy.data.%s["%s"]%s' % (col, ob.name, pp))
-                                    resolved = True
+                                    dob = getattr(bpy.data, col)[ob.name]
+                                    dob = getattr(dob, pp[1:])
                                 except:
                                     dob = None
 
