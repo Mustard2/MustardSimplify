@@ -7,9 +7,9 @@ tagline = "Tool to simplify scenes for improved viewport performance"
 maintainer = "Mustard"
 type = "add-on"
 
-website = "https://github.com/Mustard2/MustardSimplify/"
+website = "https://github.com/Mustard2/MustardSimplify/issues"
 
-tags = ["3D View"]
+tags = ["Scene"]
 
 blender_version_min = "4.3.0"
 
