@@ -10,7 +10,7 @@ bl_info = {
     "blender": (4, 3, 0),
     "warning": "",
     "doc_url": "https://github.com/Mustard2/MustardSimplify/wiki",
-    "category": "3D View",
+    "category": "Scene",
 }
 
 
