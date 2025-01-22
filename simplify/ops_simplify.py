@@ -1,6 +1,7 @@
 import bpy
 from bpy.props import *
 from mathutils import Vector, Color
+from .ops_settings_modifiers import define_modifiers
 from ..utils.execution_time import update_all_execution_time
 from .. import __package__ as base_package
 
@@ -132,6 +133,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
             # Object Modifiers
             if settings.modifiers and (eo.modifiers if eo is not None else True):
+
+                if self.enable_simplify:
+                    define_modifiers(scene)
 
                 modifiers = [x for x in obj.modifiers if not x.type in modifiers_ignore]
 

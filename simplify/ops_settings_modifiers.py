@@ -20,6 +20,135 @@ class MustardSimplify_SetModifiers(bpy.types.PropertyGroup):
     modifiers: CollectionProperty(type=MustardSimplify_SetModifier)
 
 
+def define_modifiers(scene):
+
+    def add_modifier(collection, name, disp_name, icon, simplify, type):
+        for el in collection:
+            if el.name == name:
+                return False
+        add_item = collection.add()
+        add_item.name = name
+        add_item.disp_name = disp_name
+        add_item.icon = icon
+        add_item.simplify = simplify
+        add_item.type = type
+        return True
+
+    settings = scene.MustardSimplify_Settings
+    modifiers = scene.MustardSimplify_SetModifiers.modifiers
+    addon_prefs = bpy.context.preferences.addons[base_package].preferences
+
+    # Extract type of modifiers for Objects
+    rna = bpy.ops.object.modifier_add.get_rna_type()
+    mods_list = rna.bl_rna.properties['type'].enum_items.keys()
+
+    # Make the list
+    # This is done at run-time, so it should be version agnostic
+    if len(mods_list) != len(modifiers):
+
+        modifiers.clear()
+
+        for m in mods_list:
+
+            # Standard modifiers
+            if not "GREASE_PENCIL_" in m and not "LINEART" in m:
+
+                # Change the displayed name
+                disp_name = m.replace("_", " ")
+                disp_name = disp_name.title()
+                disp_name = disp_name.replace("Uv", "UV")
+
+                icon = "MOD_" + m
+                simplify = True
+
+                # Manage single exceptions
+                if m in ["MESH_CACHE", "MESH_SEQUENCE_CACHE", "LAPLACIANDEFORM", "MESH_DEFORM", "SURFACE_DEFORM",
+                         "SURFACE"]:
+                    icon = "MOD_MESHDEFORM"
+                if m in ["LAPLACIANDEFORM"]:
+                    icon = "MOD_MESHDEFORM"
+                    disp_name = "Laplacian Deform"
+                elif m in ["NORMAL_EDIT", "WEIGHTED_NORMAL"]:
+                    icon = "MOD_NORMALEDIT"
+                elif m in ["UV_PROJECT", "UV_WARP"]:
+                    icon = "MOD_UVPROJECT"
+                elif m in ['VERTEX_WEIGHT_EDIT', 'VERTEX_WEIGHT_MIX', 'VERTEX_WEIGHT_PROXIMITY']:
+                    icon = "MOD_VERTEX_WEIGHT"
+                elif m in ['DECIMATE']:
+                    icon = "MOD_DECIM"
+                elif m in ['EDGE_SPLIT']:
+                    icon = "MOD_EDGESPLIT"
+                elif m in ['NODES']:
+                    icon = "GEOMETRY_NODES"
+                elif m in ['MULTIRES']:
+                    icon = "MOD_MULTIRES"
+                elif m in ["MESH_TO_VOLUME", "VOLUME_TO_MESH", "VOLUME_DISPLACE"]:
+                    icon = "VOLUME_DATA"
+                elif m in ["WELD"]:
+                    icon = "AUTOMERGE_OFF"
+                elif m in ['SIMPLE_DEFORM']:
+                    icon = "MOD_SIMPLEDEFORM"
+                elif m in ['SMOOTH', 'CORRECTIVE_SMOOTH']:
+                    icon = "MOD_SMOOTH"
+                if m in ["LAPLACIANSMOOTH"]:
+                    icon = "MOD_SMOOTH"
+                    disp_name = "Laplacian Smooth"
+                elif m in ["HOOK"]:
+                    icon = m
+                elif m in ["COLLISION"]:
+                    icon = "MOD_PHYSICS"
+                elif m in ["DYNAMIC_PAINT"]:
+                    icon = "MOD_DYNAMICPAINT"
+                elif m in ["PARTICLE_SYSTEM"]:
+                    icon = "MOD_PARTICLES"
+                elif m in ["SOFT_BODY"]:
+                    icon = "MOD_SOFT"
+
+                if m in settings.modifiers_ignore:
+                    simplify = False
+
+                add_modifier(modifiers, m, disp_name, icon, simplify, "OBJECT")
+
+            # Grease Pencil modifiers
+            else:
+
+                # Change the displayed name
+                disp_name = m[14:].replace("_", " ")
+                if "LINEART" in m:
+                    disp_name = m.replace("_", " ")
+                disp_name = disp_name.title()
+                disp_name = disp_name.replace("Uv", "UV")
+
+                icon = "MOD_" + m[14:]
+                if "LINEART" in m:
+                    icon = "MOD_" + m
+                simplify = True
+
+                # Manage single exceptions
+                if m in ["GREASE_PENCIL_TEXTURE"]:
+                    icon = "TEXTURE"
+                elif m in ['GREASE_PENCIL_VERTEX_WEIGHT_ANGLE', 'GREASE_PENCIL_VERTEX_WEIGHT_PROXIMITY']:
+                    icon = "MOD_VERTEX_WEIGHT"
+                elif m in ["GREASE_PENCIL_MULTIPLY"]:
+                    icon = "GP_MULTIFRAME_EDITING"
+                elif m in ["GREASE_PENCIL_SUBDIV"]:
+                    icon = "MOD_SUBSURF"
+                elif m in ["GREASE_PENCIL_THICK"]:
+                    icon = "MOD_THICKNESS"
+                elif m in ["GREASE_PENCIL_HOOK"]:
+                    icon = m[14:]
+                elif m in ["GREASE_PENCIL_COLOR"]:
+                    icon = "MOD_HUE_SATURATION"
+
+                if m in settings.modifiers_ignore:
+                    simplify = False
+
+                add_modifier(modifiers, m, disp_name, icon, simplify, "GPENCIL")
+
+        if addon_prefs.debug:
+            print("Mustard Simplify - Modifiers List generated")
+
+
 class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
     """Select the modifiers affected by the simplification process"""
     bl_idname = "mustard_simplify.menu_modifiers_select"
@@ -39,132 +168,10 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
     def invoke(self, context, event):
 
-        def add_modifier(collection, name, disp_name, icon, simplify, type):
-            for el in collection:
-                if el.name == name:
-                    return False
-            add_item = collection.add()
-            add_item.name = name
-            add_item.disp_name = disp_name
-            add_item.icon = icon
-            add_item.simplify = simplify
-            add_item.type = type
-            return True
-
         scene = bpy.context.scene
-        settings = scene.MustardSimplify_Settings
-        modifiers = scene.MustardSimplify_SetModifiers.modifiers
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
 
-        # Extract type of modifiers for Objects
-        rna = bpy.ops.object.modifier_add.get_rna_type()
-        mods_list = rna.bl_rna.properties['type'].enum_items.keys()
-
-        # Make the list
-        # This is done at run-time, so it should be version agnostic
-        if len(mods_list) != len(modifiers):
-
-            modifiers.clear()
-
-            for m in mods_list:
-
-                # Standard modifiers
-                if not "GREASE_PENCIL_" in m and not "LINEART" in m:
-
-                    # Change the displayed name
-                    disp_name = m.replace("_", " ")
-                    disp_name = disp_name.title()
-                    disp_name = disp_name.replace("Uv", "UV")
-
-                    icon = "MOD_" + m
-                    simplify = True
-
-                    # Manage single exceptions
-                    if m in ["MESH_CACHE", "MESH_SEQUENCE_CACHE", "LAPLACIANDEFORM", "MESH_DEFORM", "SURFACE_DEFORM",
-                             "SURFACE"]:
-                        icon = "MOD_MESHDEFORM"
-                    if m in ["LAPLACIANDEFORM"]:
-                        icon = "MOD_MESHDEFORM"
-                        disp_name = "Laplacian Deform"
-                    elif m in ["NORMAL_EDIT", "WEIGHTED_NORMAL"]:
-                        icon = "MOD_NORMALEDIT"
-                    elif m in ["UV_PROJECT", "UV_WARP"]:
-                        icon = "MOD_UVPROJECT"
-                    elif m in ['VERTEX_WEIGHT_EDIT', 'VERTEX_WEIGHT_MIX', 'VERTEX_WEIGHT_PROXIMITY']:
-                        icon = "MOD_VERTEX_WEIGHT"
-                    elif m in ['DECIMATE']:
-                        icon = "MOD_DECIM"
-                    elif m in ['EDGE_SPLIT']:
-                        icon = "MOD_EDGESPLIT"
-                    elif m in ['NODES']:
-                        icon = "GEOMETRY_NODES"
-                    elif m in ['MULTIRES']:
-                        icon = "MOD_MULTIRES"
-                    elif m in ["MESH_TO_VOLUME", "VOLUME_TO_MESH", "VOLUME_DISPLACE"]:
-                        icon = "VOLUME_DATA"
-                    elif m in ["WELD"]:
-                        icon = "AUTOMERGE_OFF"
-                    elif m in ['SIMPLE_DEFORM']:
-                        icon = "MOD_SIMPLEDEFORM"
-                    elif m in ['SMOOTH', 'CORRECTIVE_SMOOTH']:
-                        icon = "MOD_SMOOTH"
-                    if m in ["LAPLACIANSMOOTH"]:
-                        icon = "MOD_SMOOTH"
-                        disp_name = "Laplacian Smooth"
-                    elif m in ["HOOK"]:
-                        icon = m
-                    elif m in ["COLLISION"]:
-                        icon = "MOD_PHYSICS"
-                    elif m in ["DYNAMIC_PAINT"]:
-                        icon = "MOD_DYNAMICPAINT"
-                    elif m in ["PARTICLE_SYSTEM"]:
-                        icon = "MOD_PARTICLES"
-                    elif m in ["SOFT_BODY"]:
-                        icon = "MOD_SOFT"
-
-                    if m in settings.modifiers_ignore:
-                        simplify = False
-
-                    add_modifier(modifiers, m, disp_name, icon, simplify, "OBJECT")
-
-                # Grease Pencil modifiers
-                else:
-
-                    # Change the displayed name
-                    disp_name = m[14:].replace("_", " ")
-                    if "LINEART" in m:
-                        disp_name = m.replace("_", " ")
-                    disp_name = disp_name.title()
-                    disp_name = disp_name.replace("Uv", "UV")
-
-                    icon = "MOD_" + m[14:]
-                    if "LINEART" in m:
-                        icon = "MOD_" + m
-                    simplify = True
-
-                    # Manage single exceptions
-                    if m in ["GREASE_PENCIL_TEXTURE"]:
-                        icon = "TEXTURE"
-                    elif m in ['GREASE_PENCIL_VERTEX_WEIGHT_ANGLE', 'GREASE_PENCIL_VERTEX_WEIGHT_PROXIMITY']:
-                        icon = "MOD_VERTEX_WEIGHT"
-                    elif m in ["GREASE_PENCIL_MULTIPLY"]:
-                        icon = "GP_MULTIFRAME_EDITING"
-                    elif m in ["GREASE_PENCIL_SUBDIV"]:
-                        icon = "MOD_SUBSURF"
-                    elif m in ["GREASE_PENCIL_THICK"]:
-                        icon = "MOD_THICKNESS"
-                    elif m in ["GREASE_PENCIL_HOOK"]:
-                        icon = m[14:]
-                    elif m in ["GREASE_PENCIL_COLOR"]:
-                        icon = "MOD_HUE_SATURATION"
-
-                    if m in settings.modifiers_ignore:
-                        simplify = False
-
-                    add_modifier(modifiers, m, disp_name, icon, simplify, "GPENCIL")
-
-            if addon_prefs.debug:
-                print("Mustard Simplify - Modifiers List generated")
+        define_modifiers(scene)
 
         update_all_execution_time()
 
