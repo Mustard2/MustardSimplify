@@ -32,4 +32,5 @@ Note: Enabling "Disable Drivers" will mute all drivers (unless the object is in 
 ## Credits
 
 - Thanks to all direct contributors to the project (@cl3m3c7) and to all people reporting bugs/suggesting features.
+- Thanks to @theoldben for their [BlenderNormalGroups](https://github.com/theoldben/BlenderNormalGroups) add-on that I integrated into Mustard Simplify.
 - Thanks to Cosmo Mídias for some ideas about the Execution Time feature.
