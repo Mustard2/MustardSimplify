@@ -14,9 +14,10 @@ It operates non-destructively, meaning no mesh edits are made, and preserves the
 
 ## How to install
 
-Download the [latest version](https://github.com/Mustard2/MustardSimplify/releases/tag/2025.1.0) from the Releases page, and install it as a Blender Extension or a Legacy Blender add-on.
+There are two supported ways to install the add-on:
 
-**Do not download the code from the repository! Only use the .zip files in the Release page.**
+- (Best) Install the add-on as a Blender extension, either from the [website](https://extensions.blender.org/add-ons/mustardsimplify/) or in the Get Extensions panel of Blender settings.
+- Download the [latest version](https://github.com/Mustard2/MustardSimplify/releases/tag/2025.1.0) from the Releases page, and install it as a Blender Extension or a Legacy Blender add-on. **Do not download the code from the repository! Only use the .zip files in the Release page.**
 
 ## How to use
 
