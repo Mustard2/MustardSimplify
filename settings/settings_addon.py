@@ -39,8 +39,6 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
         col.operator("mustard_simplify.reset_settings", icon="GHOST_DISABLED")
 
         col = layout.column(align=True)
-        col.operator("mustard_simplify.openlink", text="Check Version",
-                        icon="URL").url = "https://github.com/Mustard2/MustardSimplify/releases"
         col.operator("mustard_simplify.openlink", text="Report Issue",
                         icon="URL").url = "https://github.com/Mustard2/MustardSimplify/issues"
 
