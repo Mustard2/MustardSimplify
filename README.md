@@ -29,10 +29,6 @@ For more details, check the [add-on's GitHub wiki](https://github.com/Mustard2/M
 
 Note: Enabling "Disable Drivers" will mute all drivers (unless the object is in the Exceptions list). When Simplify is turned off, these drivers will be unmuted. To prevent unintended unmuting, consider adding the affected object to the Exceptions list.
 
-## Benchmarks
-
-From some preliminarly benchmarks, I got even +100% on some randomly selected scenes from other people (I could not use my scenes as they are already optimized with MustardUI Simplify).
-
 ## Credits
 
 - Thanks to all direct contributors to the project (@cl3m3c7) and to all people reporting bugs/suggesting features.
