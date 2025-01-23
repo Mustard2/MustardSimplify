@@ -301,9 +301,12 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             if addon_prefs.debug and not self.enable_simplify:
                 print("\n ----------- Drivers reverted: " + str(num_drivers) + " -----------")
 
-        update_all_execution_time()
-        if addon_prefs.debug:
-            print("\n Updated modifiers Execution Times.")
+        try:
+            update_all_execution_time()
+            if addon_prefs.debug:
+                print("\n Updated modifiers Execution Times.")
+        except:
+            print("\n Mustard Simplify - An error occurred when updating the execution times")
 
         if addon_prefs.debug:
             print("\n")
