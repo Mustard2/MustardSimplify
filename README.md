@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/59d43718-e0f7-4cf3-88e4-d079df0d92fd" width="200" />
+  <img src="https://github.com/user-attachments/assets/294b511a-9770-42dc-8b2b-beaba2fefc42" width="200" />
 </p>
+
 
 # Mustard Simplify
 
