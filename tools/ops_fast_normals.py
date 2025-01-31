@@ -115,6 +115,8 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         settings = bpy.context.scene.MustardSimplify_Settings
         settings.simplify_fastnormals_status = self.custom
 
+        context.area.tag_redraw()
+
         return {'FINISHED'}
 
 
