@@ -15,6 +15,11 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
                        description="Show the Help buttons near the tools",
                        default=True)
 
+    viewport_button: BoolProperty(default=True,
+                                  name="Simplify Viewport Button",
+                                  description="Add buttons in Viewport to enable/disable Simplify, and Eevee Fast "
+                                              "Normals")
+
     # Maintenance tools
     advanced: BoolProperty(name="Advanced Options",
                            description="Unlock advanced options",
@@ -32,6 +37,9 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
 
         col = layout.column(align=True)
         col.prop(self, "wiki")
+        col.prop(self, "viewport_button")
+
+        col.separator()
         col.prop(self, "advanced")
         col.prop(self, "debug")
 
