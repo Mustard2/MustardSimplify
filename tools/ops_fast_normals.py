@@ -84,7 +84,7 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
                         uvNode.hide = True
                         uvNode.select = False
                         uvNode.location = Vector((new.location.x, new.location.y - 150.))
-                        uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs["Color"])
+                        uvNode.id_data.links.new(uvNode.outputs['UV'], new.inputs["UV"])
                     else:
                         try:
                             try:
