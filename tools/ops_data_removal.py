@@ -141,7 +141,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
             box.label(text="No Data Blocks found", icon="ERROR")
             return
 
-        box.label(text="This operation is highly destructive! Remove only data-blocks you not need!", icon="ERROR")
+        box.label(text="This operation is highly destructive! Remove only data-blocks you do not need!", icon="ERROR")
 
         ordered_entries = [x for x in sorted([x for x in entries], key=lambda x: x.count, reverse=True) if self.search in x.name]
         length_entries = len(ordered_entries)
