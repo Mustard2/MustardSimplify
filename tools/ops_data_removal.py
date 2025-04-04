@@ -42,15 +42,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
     bl_label = "Remove Data"
     bl_options = {'UNDO'}
 
-    remove_diffeomorphic_data: BoolProperty(default=True,
-                                            name="Diffeomorphic",
-                                            description="Remove Diffeomorphic data")
-    remove_diffeomorphic_data_preserve_morphs: BoolProperty(default=True,
-                                                            name="Preserve Morphs",
-                                                            description="Prevent Morphs deletion")
-    remove_custom_string_data: StringProperty(default="",
-                                              name="Custom Removal",
-                                              description="Remove all data blocks which contains this custom string")
+    search: StringProperty(default="", name="")
 
     @classmethod
     def poll(cls, context):
@@ -79,12 +71,12 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
             items_to_remove = []
             for k, v in obj.items():
                 for ll in [x.name for x in entries if x.remove]:
-                    if ll == k:
+                    if ll == k and self.search in k:
                         items_to_remove.append(k)
             if obj.data is not None:
                 for k, v in obj.data.items():
                     for ll in [x.name for x in entries if x.remove]:
-                        if ll == k:
+                        if ll == k and self.search in k:
                             items_to_remove.append(k)
             items_to_remove.reverse()
             if addon_prefs.debug and len(items_to_remove) > 0:
@@ -133,6 +125,8 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                     if k in rna_props and rna_props[k].is_runtime:
                         add_entry(entries, k)
 
+        self.search = ""
+
         return context.window_manager.invoke_props_dialog(self, width=1024 if addon_prefs.debug else 900)
 
     def draw(self, context):
@@ -149,7 +143,7 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
         box.label(text="This operation is highly destructive! Remove only data-blocks you not need!", icon="ERROR")
 
-        ordered_entries = sorted([x for x in entries], key=lambda x: x.count, reverse=True)
+        ordered_entries = [x for x in sorted([x for x in entries], key=lambda x: x.count, reverse=True) if self.search in x.name]
         length_entries = len(ordered_entries)
 
         cols = [0, 0, 0]
@@ -164,6 +158,9 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
         row = box.row(align=True)
         row.operator("mustard_simplify.data_removal_select", text="Select All").select = True
         row.operator("mustard_simplify.data_removal_select", text="Deselect All").select = False
+
+        row = box.row(align=True)
+        row.prop(self, 'search', icon="VIEWZOOM")
 
         row = box.row()
         for i in range(len(cols)):
