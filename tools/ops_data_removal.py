@@ -82,8 +82,10 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
             if addon_prefs.debug and len(items_to_remove) > 0:
                 print("\n Removing from Object: " + obj.name)
             for k in items_to_remove:
-                data_deleted = data_deleted + remove_data(obj, k)
-                data_deleted = data_deleted + remove_data(obj.data, k)
+                if k in obj:
+                    data_deleted = data_deleted + remove_data(obj, k)
+                if obj.data is not None and k in obj.data:
+                    data_deleted = data_deleted + remove_data(obj.data, k)
                 if addon_prefs.debug:
                     print("   - " + k)
             obj.update_tag()
