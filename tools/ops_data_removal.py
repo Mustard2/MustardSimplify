@@ -50,9 +50,9 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
 
     def execute(self, context):
 
-        def remove_data(obj, attr):
+        def remove_data(o, attr):
             try:
-                del obj[attr]
+                del o[attr]
                 return 1
             except:
                 return 0
@@ -87,6 +87,8 @@ class MUSTARDSIMPLIFY_OT_DataRemoval(bpy.types.Operator):
                 if addon_prefs.debug:
                     print("   - " + k)
             obj.update_tag()
+
+        entries.clear()
 
         if data_deleted > 0:
             self.report({'INFO'}, "Mustard Simplify - Data Blocks removed: " + str(data_deleted))
