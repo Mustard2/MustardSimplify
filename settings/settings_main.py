@@ -45,16 +45,6 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                           description="Hide objects",
                           default=False)
 
-    # UI Settings
-    collapse_options: BoolProperty(name="Collapse",
-                                   default=True)
-    collapse_exceptions: BoolProperty(name="Collapse",
-                                      default=True)
-    collapse_times: BoolProperty(name="Collapse",
-                                  default=True)
-    collapse_others: BoolProperty(name="Collapse",
-                                  default=True)
-
     # Exceptions
     exception_type: EnumProperty(name="Exception",
                                  description="Exception Type",

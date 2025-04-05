@@ -32,6 +32,10 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
                                     "console.\nEnable it only if you encounter problems, as it might "
                                     "degrade general Blender performance")
 
+    url_MustardSimplify = "https://github.com/Mustard2/MustardSimplify"
+    url_MustardSimplify_ReportBug = "https://github.com/Mustard2/MustardSimplify/issues"
+    url_MustardSimplify_Tutorial = "https://github.com/Mustard2/MustardSimplify/wiki"
+
     def draw(self, context):
         layout = self.layout
 
@@ -46,9 +50,12 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
         col = layout.column(align=True)
         col.operator("mustard_simplify.reset_settings", icon="GHOST_DISABLED")
 
-        col = layout.column(align=True)
-        col.operator("mustard_simplify.openlink", text="Report Issue",
-                        icon="URL").url = "https://github.com/Mustard2/MustardSimplify/issues"
+        row = layout.row(align=True)
+        row.operator('mustard_simplify.openlink', text="GitHub", icon="URL").url = self.url_MustardSimplify
+        row.operator('mustard_simplify.openlink', text="User Guide",
+                     icon="URL").url = self.url_MustardSimplify_Tutorial
+        row.operator('mustard_simplify.openlink', text="Report Bug",
+                     icon="URL").url = self.url_MustardSimplify_ReportBug
 
 
 def register():
