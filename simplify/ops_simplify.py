@@ -173,7 +173,11 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             status = sk.mute
                             add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
                             attr = f'key_blocks["{bpy.utils.escape_identifier(sk.name)}"].value'
-                            value_bool = True if sk.value < 1e-5 else False
+                            
+                            # We didn't use 0 to accomodate for diffeomorphic models shape-keys that use values in the range [-0.00000?, 0.00000?]
+                            # with no visual effect (pretty much useless)!
+                            # see https://github.com/Mustard2/MustardSimplify/issues/45#issuecomment-2811323931
+                            value_bool = sk.value > -1e-5 and sk.value < 1e-5
                             if has_driver(obj.data.shape_keys, attr):
                                 sk.mute = value_bool if (
                                         settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
