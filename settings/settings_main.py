@@ -28,8 +28,8 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                                     description="Disable Shape Keys driven by animation keyframes regardless of other settings.\nThis is not affected by Disable when Null setting: if the setting is on, these Shape Keys are muted regardless of their value",
                                                     default=False)
     # Physics
-    physics: BoolProperty(name="Physics",
-                          description="Disable Physics",
+    physics: BoolProperty(name="Physics (Rigid Bodies)",
+                          description="Disable Physics: controls rigid bodies only",
                           default=True)
     # Drivers
     drivers: BoolProperty(name="Drivers",
