@@ -103,6 +103,8 @@ def define_modifiers(scene):
                     icon = "MOD_PARTICLES"
                 elif m in ["SOFT_BODY"]:
                     icon = "MOD_SOFT"
+                elif m in ["FLUID"]:
+                    icon = "MOD_FLUIDSIM"
 
                 if m in settings.modifiers_ignore:
                     simplify = False
