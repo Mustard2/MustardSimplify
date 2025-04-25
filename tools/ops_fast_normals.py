@@ -244,7 +244,7 @@ def default_custom_nodes():
         node.inputs[4].default_value = 1.0  # Height_dy
         node.inputs[5].default_value = (0.0, 0.0, 0.0)  # Normal
     else:
-        node.inputs[3].default_value = (0.0, 0.0, 0.0)  # Normal
+        node.inputs[4].default_value = (0.0, 0.0, 0.0)  # Normal
 
     node = nodes.new('ShaderNodeBump')
     node.name = 'Tangent'
