@@ -152,6 +152,10 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     row.prop(obj, 'normals_auto_smooth')
                     row.enabled = settings.normals_auto_smooth
 
+                    row = col.row()
+                    row.enabled = obj.exception.type == "MESH"
+                    row.prop(obj, 'camera_hide')
+
         else:
 
             row = layout.row()

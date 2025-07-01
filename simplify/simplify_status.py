@@ -49,6 +49,9 @@ class MustardSimplify_Exception(bpy.types.PropertyGroup):
     visibility: bpy.props.BoolProperty(name="Visibility",
                                        description="Hide the Object",
                                        default=False)
+    camera_hide: bpy.props.BoolProperty(name="Camera Hide",
+                                       description="Apply the Camera Hide operation",
+                                       default=False)
 
 
 class MustardSimplify_Exceptions(bpy.types.PropertyGroup):
