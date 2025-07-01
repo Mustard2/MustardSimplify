@@ -35,7 +35,6 @@ def store_objects_visibility():
 
 
 def apply_frustum_culling():
-
     def find_exception_obj(collection, obj):
         for el in collection:
             if el.exception == obj:
@@ -50,17 +49,18 @@ def apply_frustum_culling():
     if cam_obj is None:
         return
     planes = camera_as_planes(scene, cam_obj)
-    for obj in scene.objects:
-        if obj.type == 'MESH':
-            exception_collection = settings.exception_collection
-            exception = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
-            if (exception is not None and not exception.camera_hide) or (exception_collection is not None and obj in [x for x in (settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]):
-                continue
-            was_hidden_before = obj.get("was_hidden_before_culling", False)
-            if was_hidden_before:
-                obj.hide_viewport = True
-            else:
-                obj.hide_viewport = not is_bbox_in_frustum(obj, planes)
+    for obj in [x for x in scene.objects if x and x.type == 'MESH']:
+        exception_collection = settings.exception_collection
+        exception = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
+        if (exception is not None and not exception.camera_hide) or (
+                exception_collection is not None and obj in [x for x in (
+                settings.exception_collection.all_objects if settings.exception_include_subcollections else settings.exception_collection.objects)]):
+            continue
+        was_hidden_before = obj.get("was_hidden_before_culling", False)
+        if was_hidden_before and not obj.hide_viewport:
+            obj.hide_viewport = True
+        elif not was_hidden_before and not obj.hide_viewport == (not is_bbox_in_frustum(obj, planes)):
+            obj.hide_viewport = not is_bbox_in_frustum(obj, planes)
 
 
 def restore_objects_visibility():
@@ -173,4 +173,3 @@ def unregister():
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_ApplyCameraHide)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_CameraHide)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_CameraHideModel)
-
