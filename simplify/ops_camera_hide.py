@@ -21,11 +21,11 @@ def camera_as_planes(scene, cam_obj):
 
 
 def is_bbox_in_frustum(obj, planes):
-    box = [obj.matrix_world @ mathutils.Vector(c) for c in obj.bound_box]
-    for corner in box:
-        if all(normal.dot(corner) + d >= 0 for normal, d in planes):
-            return True
-    return False
+    box = [obj.matrix_world @ mathutils.Vector(corner) for corner in obj.bound_box]
+    for normal, d in planes:
+        if all(normal.dot(corner) + d < 0 for corner in box):
+            return False
+    return True
 
 
 def store_objects_visibility():
