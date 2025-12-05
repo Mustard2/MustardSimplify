@@ -32,6 +32,12 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
                                     "console.\nEnable it only if you encounter problems, as it might "
                                     "degrade general Blender performance")
 
+    # Experimental
+    experimental: BoolProperty(default=False,
+                               name="Experimental",
+                               description="Unlock Experimental Features.\nUse these features with caution, as they "
+                                           "might not work properly or not be beneficial for performance in all cases")
+
     url_MustardSimplify = "https://github.com/Mustard2/MustardSimplify"
     url_MustardSimplify_ReportBug = "https://github.com/Mustard2/MustardSimplify/issues"
     url_MustardSimplify_Tutorial = "https://github.com/Mustard2/MustardSimplify/wiki"
@@ -45,6 +51,7 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
 
         col.separator()
         col.prop(self, "advanced")
+        col.prop(self, "experimental")
         col.prop(self, "debug")
 
         col = layout.column(align=True)

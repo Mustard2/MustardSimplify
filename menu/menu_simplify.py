@@ -93,6 +93,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
 
     def draw(self, context):
 
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
+
         scene = context.scene
         layout = self.layout
         settings = scene.MustardSimplify_Settings
@@ -152,9 +154,10 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     row.prop(obj, 'normals_auto_smooth')
                     row.enabled = settings.normals_auto_smooth
 
-                    row = col.row()
-                    row.enabled = obj.exception.type == "MESH"
-                    row.prop(obj, 'camera_hide')
+                    if addon_prefs.experimental:
+                        row = col.row()
+                        row.enabled = obj.exception.type == "MESH"
+                        row.prop(obj, 'camera_hide')
 
         else:
 
