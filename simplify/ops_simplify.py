@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import *
+from bpy_extras import anim_utils
 from mathutils import Vector, Color
 from .ops_settings_modifiers import define_modifiers
 from ..utils.execution_time import update_all_execution_time
@@ -52,11 +53,35 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             return None
 
         def has_keyframe(ob, attr):
-            anim = ob.animation_data
-            if anim is not None and anim.action is not None:
-                for fcu in anim.action.fcurves:
-                    if fcu.data_path == attr:
-                        return len(fcu.keyframe_points) > 0
+
+            if bpy.app.version < (4, 4, 0):
+                anim = ob.animation_data
+
+                if anim is not None and anim.action is not None:
+                    for fcu in anim.action.fcurves:
+                        if fcu.data_path == attr:
+                            return len(fcu.keyframe_points) > 0
+
+            # Slots for Blender > 4.4
+            else:
+                if not ob or not hasattr(ob, "animation_data"):
+                    return False
+                animation_data = ob.animation_data
+
+                if not hasattr(animation_data, "action"):
+                    return False
+                action = animation_data.action
+                if not action:
+                    return False
+
+                for slot in action.slots:
+                    for layer in action.layers:
+                        for strip in layer.strips:
+                            channelbag = strip.channelbag(slot)
+                            for fcu in channelbag.fcurves:
+                                if fcu.data_path == attr:
+                                    return len(fcu.keyframe_points) > 0
+
             return False
 
         def has_driver(ob, attr):
@@ -173,7 +198,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             status = sk.mute
                             add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
                             attr = f'key_blocks["{bpy.utils.escape_identifier(sk.name)}"].value'
-                            
+
                             # We didn't use 0 to accomodate for diffeomorphic models shape-keys that use values in the range [-0.00000?, 0.00000?]
                             # with no visual effect (pretty much useless)!
                             # see https://github.com/Mustard2/MustardSimplify/issues/45#issuecomment-2811323931
