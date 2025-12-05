@@ -140,16 +140,20 @@ class MUSTARDSIMPLIFY_OT_ApplyCameraHide(bpy.types.Operator):
         scene = context.scene
         settings = scene.MustardSimplify_Settings
 
-        store_objects_visibility()
+        if not settings.live_frustrum_single_applied:
+            store_objects_visibility()
+            settings.live_frustrum_single_applied = True
+
         apply_frustum_culling()
-        self.report({'INFO'}, "Camera Hide applied")
+
+        self.report({'INFO'}, "Mustard Simplify - Camera Hide applied")
         return {'FINISHED'}
 
 
 class MUSTARDSIMPLIFY_OT_RestoreCameraHide(bpy.types.Operator):
     bl_idname = "mustard_simplify.restore_frustum_culling"
-    bl_label = "Disable Camera Hide"
-    bl_description = "Disable Camera Hide"
+    bl_label = "Restore Camera Hide"
+    bl_description = "Restore Camera Hide"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -157,7 +161,9 @@ class MUSTARDSIMPLIFY_OT_RestoreCameraHide(bpy.types.Operator):
         settings = scene.MustardSimplify_Settings
 
         restore_objects_visibility()
-        self.report({'INFO'}, "Camera Hide disabled")
+        settings.live_frustrum_single_applied = False
+
+        self.report({'INFO'}, "Mustard Simplify - Camera Hide restored")
         return {'FINISHED'}
 
 

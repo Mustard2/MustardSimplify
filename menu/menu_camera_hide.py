@@ -23,7 +23,7 @@ class MUSTARDSIMPLIFY_PT_CameraHide(MainPanel, bpy.types.Panel):
         row = layout.row(align=True)
         row.enabled = not settings.live_frustum_running
         row.operator("mustard_simplify.apply_frustum_culling", icon='HIDE_OFF')
-        row.operator("mustard_simplify.restore_frustum_culling", icon='X', text="")
+        row.operator("mustard_simplify.restore_frustum_culling", icon='LOOP_BACK', text="")
 
         layout.separator()
 

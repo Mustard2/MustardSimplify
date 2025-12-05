@@ -114,6 +114,9 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     execution_times_frames: IntProperty(default=0)
     execution_times_overhead: FloatProperty(default=0.)
 
+    # Camera Hidden
+    live_frustrum_single_applied: BoolProperty(default=False)
+
 
 def register():
     bpy.utils.register_class(MustardSimplify_Settings)
