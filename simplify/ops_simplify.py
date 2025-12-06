@@ -111,6 +111,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         if addon_prefs.debug:
             print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
 
+        # Track processed mesh data to avoid duplicate processing of shared mesh data
+        processed_mesh_data = set()
+
         for obj in objects:
 
             eo = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
@@ -166,38 +169,80 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             # Shape Keys
             if settings.shape_keys and obj.type == "MESH" and (eo.shape_keys if eo is not None else True):
 
+                # Check if this mesh data has already been processed (to handle shared mesh data)
+                mesh_data_processed = obj.data in processed_mesh_data
+
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
                     if obj.data.shape_keys is not None:
-                        for sk in obj.data.shape_keys.key_blocks:
-                            status = sk.mute
-                            add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
-                            attr = f'key_blocks["{bpy.utils.escape_identifier(sk.name)}"].value'
-                            
-                            # We didn't use 0 to accomodate for diffeomorphic models shape-keys that use values in the range [-0.00000?, 0.00000?]
-                            # with no visual effect (pretty much useless)!
-                            # see https://github.com/Mustard2/MustardSimplify/issues/45#issuecomment-2811323931
-                            value_bool = sk.value > -1e-5 and sk.value < 1e-5
-                            if has_driver(obj.data.shape_keys, attr):
-                                sk.mute = value_bool if (
-                                        settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
-                            elif has_keyframe(obj.data.shape_keys, attr):
-                                sk.mute = settings.shape_keys_disable_with_keyframes
-                            else:
-                                sk.mute = value_bool if settings.shape_keys_disable_not_null else True
-                            if addon_prefs.debug:
-                                if sk.mute:
-                                    print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                        # Only process shape keys if this mesh data hasn't been processed yet
+                        if not mesh_data_processed:
+                            for sk in obj.data.shape_keys.key_blocks:
+                                status = sk.mute
+                                add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
+                                attr = f'key_blocks["{bpy.utils.escape_identifier(sk.name)}"].value'
+                                
+                                # We didn't use 0 to accomodate for diffeomorphic models shape-keys that use values in the range [-0.00000?, 0.00000?]
+                                # with no visual effect (pretty much useless)!
+                                # see https://github.com/Mustard2/MustardSimplify/issues/45#issuecomment-2811323931
+                                value_bool = sk.value > -1e-5 and sk.value < 1e-5
+                                if has_driver(obj.data.shape_keys, attr):
+                                    sk.mute = value_bool if (
+                                            settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
+                                elif has_keyframe(obj.data.shape_keys, attr):
+                                    sk.mute = settings.shape_keys_disable_with_keyframes
                                 else:
-                                    print("Shape key " + sk.name + " not muted (previous mute: " + str(status) + ").")
+                                    sk.mute = value_bool if settings.shape_keys_disable_not_null else True
+                                if addon_prefs.debug:
+                                    if sk.mute:
+                                        print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
+                                    else:
+                                        print("Shape key " + sk.name + " not muted (previous mute: " + str(status) + ").")
+                            # Mark this mesh data as processed
+                            processed_mesh_data.add(obj.data)
+                        else:
+                            # Mesh data already processed, copy the original state from the first object
+                            # that processed this mesh data
+                            for other_obj in objects:
+                                if other_obj.type == "MESH" and other_obj.data == obj.data:
+                                    if len(other_obj.MustardSimplify_Status.shape_keys) > 0:
+                                        # Copy the original state from the first object
+                                        for sk in obj.data.shape_keys.key_blocks:
+                                            name, status = find_prop_status(other_obj.MustardSimplify_Status.shape_keys, sk)
+                                            if name != "":
+                                                add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
+                                        if addon_prefs.debug:
+                                            print("Shape keys for object " + obj.name + " (shared mesh data) - original state copied from " + other_obj.name + ".")
+                                        break
                 else:
                     if obj.data.shape_keys is not None:
-                        for sk in obj.data.shape_keys.key_blocks:
-                            name, status = find_prop_status(obj.MustardSimplify_Status.shape_keys, sk)
-                            if name != "":
-                                sk.mute = status
-                                if addon_prefs.debug:
-                                    print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
+                        # Only restore shape keys if this mesh data hasn't been restored yet
+                        if not mesh_data_processed:
+                            # Find the first object with valid status for this mesh data
+                            # (in case current object's status was cleared)
+                            source_obj = obj
+                            if len(obj.MustardSimplify_Status.shape_keys) == 0:
+                                # Current object has no saved status, find another object with same mesh data
+                                for other_obj in objects:
+                                    if other_obj.type == "MESH" and other_obj.data == obj.data:
+                                        if len(other_obj.MustardSimplify_Status.shape_keys) > 0:
+                                            source_obj = other_obj
+                                            if addon_prefs.debug:
+                                                print("Using shape keys status from object " + source_obj.name + " for shared mesh data.")
+                                            break
+                            
+                            # Restore shape keys using status from source_obj
+                            for sk in obj.data.shape_keys.key_blocks:
+                                name, status = find_prop_status(source_obj.MustardSimplify_Status.shape_keys, sk)
+                                if name != "":
+                                    sk.mute = status
+                                    if addon_prefs.debug:
+                                        print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
+                            # Mark this mesh data as processed
+                            processed_mesh_data.add(obj.data)
+                        else:
+                            if addon_prefs.debug:
+                                print("Shape keys for object " + obj.name + " (shared mesh data) - already restored.")
 
             # Normals Auto Smooth
             if settings.normals_auto_smooth and obj.type == "MESH" and (
