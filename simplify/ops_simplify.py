@@ -112,7 +112,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
 
         # Track processed mesh data to avoid duplicate processing of shared mesh data
-        processed_mesh_data = set()
+        # Dictionary mapping mesh_data -> source_object for O(1) lookup
+        processed_mesh_data = {}
 
         for obj in objects:
 
@@ -171,6 +172,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
                 # Check if this mesh data has already been processed (to handle shared mesh data)
                 mesh_data_processed = obj.data in processed_mesh_data
+                source_obj = processed_mesh_data.get(obj.data) if mesh_data_processed else None
 
                 if self.enable_simplify:
                     obj.MustardSimplify_Status.shape_keys.clear()
@@ -198,49 +200,54 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                         print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
                                     else:
                                         print("Shape key " + sk.name + " not muted (previous mute: " + str(status) + ").")
-                            # Mark this mesh data as processed
-                            processed_mesh_data.add(obj.data)
+                            # Mark this mesh data as processed and store source object
+                            processed_mesh_data[obj.data] = obj
                         else:
-                            # Mesh data already processed, copy the original state from the first object
-                            # that processed this mesh data
-                            for other_obj in objects:
-                                if other_obj.type == "MESH" and other_obj.data == obj.data:
-                                    if len(other_obj.MustardSimplify_Status.shape_keys) > 0:
-                                        # Copy the original state from the first object
-                                        for sk in obj.data.shape_keys.key_blocks:
-                                            name, status = find_prop_status(other_obj.MustardSimplify_Status.shape_keys, sk)
-                                            if name != "":
-                                                add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
-                                        if addon_prefs.debug:
-                                            print("Shape keys for object " + obj.name + " (shared mesh data) - original state copied from " + other_obj.name + ".")
-                                        break
+                            # Mesh data already processed, copy the original state from the source object
+                            # Use O(1) dictionary lookup instead of O(N) loop
+                            if source_obj is not None and len(source_obj.MustardSimplify_Status.shape_keys) > 0:
+                                # Copy the original state from the source object
+                                for sk in obj.data.shape_keys.key_blocks:
+                                    name, status = find_prop_status(source_obj.MustardSimplify_Status.shape_keys, sk)
+                                    if name != "":
+                                        add_prop_status(obj.MustardSimplify_Status.shape_keys, [sk.name, status])
+                                if addon_prefs.debug:
+                                    print("Shape keys for object " + obj.name + " (shared mesh data) - original state copied from " + source_obj.name + ".")
                 else:
                     if obj.data.shape_keys is not None:
                         # Only restore shape keys if this mesh data hasn't been restored yet
                         if not mesh_data_processed:
-                            # Find the first object with valid status for this mesh data
-                            # (in case current object's status was cleared)
-                            source_obj = obj
-                            if len(obj.MustardSimplify_Status.shape_keys) == 0:
-                                # Current object has no saved status, find another object with same mesh data
-                                for other_obj in objects:
-                                    if other_obj.type == "MESH" and other_obj.data == obj.data:
-                                        if len(other_obj.MustardSimplify_Status.shape_keys) > 0:
-                                            source_obj = other_obj
-                                            if addon_prefs.debug:
-                                                print("Using shape keys status from object " + source_obj.name + " for shared mesh data.")
-                                            break
+                            # Determine source object for restoration: use current obj if it has status,
+                            # otherwise use the source_obj from dictionary (O(1) lookup)
+                            restore_source_obj = None
+                            if len(obj.MustardSimplify_Status.shape_keys) > 0:
+                                # Current object has saved status, use it
+                                restore_source_obj = obj
+                            elif source_obj is not None and len(source_obj.MustardSimplify_Status.shape_keys) > 0:
+                                # Current object has no status, use source_obj from dictionary (O(1) lookup)
+                                restore_source_obj = source_obj
+                                if addon_prefs.debug:
+                                    print("Using shape keys status from object " + restore_source_obj.name + " for shared mesh data (from dictionary).")
                             
-                            # Restore shape keys using status from source_obj
-                            for sk in obj.data.shape_keys.key_blocks:
-                                name, status = find_prop_status(source_obj.MustardSimplify_Status.shape_keys, sk)
-                                if name != "":
-                                    sk.mute = status
-                                    if addon_prefs.debug:
-                                        print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
-                            # Mark this mesh data as processed
-                            processed_mesh_data.add(obj.data)
+                            # Restore shape keys if we found a valid source object
+                            if restore_source_obj is not None:
+                                for sk in obj.data.shape_keys.key_blocks:
+                                    name, status = find_prop_status(restore_source_obj.MustardSimplify_Status.shape_keys, sk)
+                                    if name != "":
+                                        sk.mute = status
+                                        if addon_prefs.debug:
+                                            print("Shape key " + sk.name + " reverted to mute: " + str(status) + ".")
+                                # Mark this mesh data as processed and store source object for future lookups
+                                processed_mesh_data[obj.data] = restore_source_obj
+                            else:
+                                # No valid source object found (edge case: first disable without prior enable)
+                                # Mark as processed to avoid repeated attempts, using current obj as placeholder
+                                processed_mesh_data[obj.data] = obj
+                                if addon_prefs.debug:
+                                    print("Shape keys for object " + obj.name + " - no saved status found, skipping restoration.")
                         else:
+                            # Mesh data already processed (restored by first object with status)
+                            # Shape keys are already restored, no need to restore again
                             if addon_prefs.debug:
                                 print("Shape keys for object " + obj.name + " (shared mesh data) - already restored.")
 
