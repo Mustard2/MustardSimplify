@@ -95,9 +95,27 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
                                      ("NAME", "Name", "Order by name", "SORTALPHA", 0),
                                      ("TIME", "Time", "Order by time", "TIME", 1))
                                        )
+
+    # Camera Hide
+    live_frustum_running: BoolProperty(
+        default=False)
+    live_frustum_should_stop: BoolProperty(
+        default=False)
+    live_frustum_interval: FloatProperty(
+        name="Update Interval",
+        description="Time in seconds between Camera Hide updates",
+        default=0.2,
+        min=0.01,
+        max=5.0,
+        step=0.01,
+        precision=2)
+
     # Internal
     execution_times_frames: IntProperty(default=0)
     execution_times_overhead: FloatProperty(default=0.)
+
+    # Camera Hidden
+    live_frustrum_single_applied: BoolProperty(default=False)
 
 
 def register():
