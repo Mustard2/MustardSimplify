@@ -212,14 +212,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 # We didn't use 0 to accomodate for diffeomorphic models shape-keys that use values in the range [-0.00000?, 0.00000?]
                                 # with no visual effect (pretty much useless)!
                                 # see https://github.com/Mustard2/MustardSimplify/issues/45#issuecomment-2811323931
-                                value_bool = sk.value > -1e-5 and sk.value < 1e-5
+                                value_bool = -1e-5 < sk.value < 1e-5
                                 if has_driver(obj.data.shape_keys, attr):
                                     sk.mute = value_bool if (
                                             settings.shape_keys_disable_with_drivers and settings.shape_keys_disable_with_drivers_not_null) else settings.shape_keys_disable_with_drivers
                                 elif has_keyframe(obj.data.shape_keys, attr):
                                     sk.mute = settings.shape_keys_disable_with_keyframes
                                 else:
-                                    sk.mute = value_bool if settings.shape_keys_disable_not_null else True
+                                    sk.mute = (value_bool or sk.mute) if settings.shape_keys_disable_not_null else True
                                 if addon_prefs.debug:
                                     if sk.mute:
                                         print("Shape key " + sk.name + " disabled (previous mute: " + str(status) + ").")
