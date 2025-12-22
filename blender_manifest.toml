@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "MustardSimplify"
-version = "2025.4.0"
+version = "2025.4.1"
 name = "Mustard Simplify"
 tagline = "Tool to simplify scenes for improved viewport performance"
 maintainer = "Mustard"
