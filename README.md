@@ -2,6 +2,7 @@
   <img src="https://github.com/user-attachments/assets/294b511a-9770-42dc-8b2b-beaba2fefc42" width="200" />
 </p>
 
+[![Build & Test Blender Extension](https://github.com/Mustard2/MustardSimplify/actions/workflows/build-blender.yml/badge.svg)](https://github.com/Mustard2/MustardSimplify/actions/workflows/build-blender.yml)
 
 # Mustard Simplify
 
