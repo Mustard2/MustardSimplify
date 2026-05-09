@@ -9,19 +9,23 @@ class MUSTARDSIMPLIFY_PT_Tools(MainPanel, bpy.types.Panel):
     bl_label = "Tools"
     bl_options = {"DEFAULT_CLOSED"}
 
-    def draw(self, context):
-        addon_prefs = bpy.context.preferences.addons[base_package].preferences
-
+    def draw_header_preset(self, context):
         layout = self.layout
-
-        box = layout.box()
-        row = box.row()
-        row.label(text="General", icon="TOOL_SETTINGS")
+        addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs.wiki:
-            row.operator(
+            layout.operator(
                 "mustard_simplify.openlink", text="", icon="QUESTION"
             ).url = "https://github.com/Mustard2/MustardSimplify/wiki#tools"
-        box.operator(
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator(
+            "mustard_simplify.add_proxy",
+            text="Create Armature Proxy",
+            icon="ARMATURE_DATA",
+        )
+        layout.operator(
             "mustard_simplify.data_removal", text="Data Removal", icon="BRUSH_DATA"
         )
 
