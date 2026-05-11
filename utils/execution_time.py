@@ -74,7 +74,9 @@ def update_animation_execution_time(scene):
 
     settings.execution_times_frames += 1
 
-    context.area.tag_redraw()
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            area.tag_redraw()
 
     if addon_prefs.debug:
         settings.execution_times_overhead = time.time() - start

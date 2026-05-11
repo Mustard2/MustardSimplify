@@ -13,12 +13,15 @@ from ..utils.execution_time import update_all_execution_time
 
 
 class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
+    simplify: BoolProperty(default=True,
+                           name="Simplify")
+    execution_time: BoolProperty(default=False,
+                                 name="Evaluate Execution Time")
+
     name: StringProperty(default="")
     disp_name: StringProperty(default="")
     icon: StringProperty(default="")
-    simplify: BoolProperty(default=True)
     type: StringProperty(default="OBJECT")
-    execution_time: BoolProperty(default=False)
 
     time: FloatProperty(default=0.0)
 
