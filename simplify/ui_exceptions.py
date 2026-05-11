@@ -2,48 +2,37 @@ import bpy
 from bpy.props import IntProperty
 
 
-class MUSTARDSIMPLIFY_OT_AddException(bpy.types.Operator):
+class MUSTARDSIMPLIFY_OT_AddExceptionSelected(bpy.types.Operator):
     """Add Object to the exceptions list"""
 
-    bl_idname = "mustard_simplify.add_exception"
-    bl_label = "Add Object"
+    bl_idname = "mustard_simplify.add_exception_selected"
+    bl_label = "Add Selected Objects as Exceptions"
     bl_options = {"UNDO"}
+
+    def add_exception(self, collection, obj):
+        for el in collection:
+            if el.exception == obj:
+                return False
+        add_item = collection.add()
+        add_item.exception = obj
+        return True
 
     @classmethod
     def poll(cls, context):
         # Enable operator only when the scene is not simplified
         settings = bpy.context.scene.MustardSimplify_Settings
-        return not settings.simplify_status
+
+        # And objects are selected in Viewport
+        is_object_selected = len(context.selected_objects) > 0
+        return not settings.simplify_status and is_object_selected
 
     def execute(self, context):
-
-        def add_exception(collection, obj):
-            for el in collection:
-                if el.exception == obj:
-                    return False
-            add_item = collection.add()
-            add_item.exception = obj
-            return True
-
-        def find_exception(collection, obj):
-            for el in collection:
-                if el.exception == obj:
-                    return el.exception
-            return None
-
         settings = bpy.context.scene.MustardSimplify_Settings
         scene = context.scene
 
-        if settings.exception_select is not None:
-            res = add_exception(
-                scene.MustardSimplify_Exceptions.exceptions, settings.exception_select
-            )
-            if not res:
-                self.report(
-                    {"ERROR"}, "Mustard Simplify - Object already added to exceptions."
-                )
-
-        settings.exception_select = None
+        for obj in context.selected_objects:
+            settings.exception_select = obj
+            self.add_exception(scene.MustardSimplify_Exceptions.exceptions, obj)
 
         return {"FINISHED"}
 
@@ -159,7 +148,7 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
 
 
 def register():
-    bpy.utils.register_class(MUSTARDSIMPLIFY_OT_AddException)
+    bpy.utils.register_class(MUSTARDSIMPLIFY_OT_AddExceptionSelected)
     bpy.utils.register_class(MUSTARDSIMPLIFY_OT_RemoveException)
     bpy.utils.register_class(MUSTARDSIMPLIFY_UL_Exceptions_UIList)
 
@@ -174,4 +163,4 @@ def unregister():
 
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_UL_Exceptions_UIList)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_RemoveException)
-    bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_AddException)
+    bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_AddExceptionSelected)

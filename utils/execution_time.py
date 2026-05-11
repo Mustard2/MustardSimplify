@@ -92,7 +92,7 @@ class MUSTARDSIMPLIFY_OT_UpdateExecutionTime(bpy.types.Operator):
         bpy.context.view_layer.update()
         update_all_execution_time()
         self.report(
-            {"INFO"}, "Mustard Simplify - Modifiers Execution Time has been updated."
+            {"INFO"}, "Mustard Simplify - Modifiers Execution Time have been updated."
         )
         return {"FINISHED"}
 
