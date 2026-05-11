@@ -23,8 +23,7 @@ def draw_viewport_button(self, context):
 
         row = row.row()
         row.enabled = not (
-            not settings.simplify_fastnormals_status
-            and scene.render.engine == "CYCLES"
+            not settings.simplify_fastnormals_status and scene.render.engine == "CYCLES"
         )
         op2 = row.operator(
             "mustard_simplify.fast_normals",
