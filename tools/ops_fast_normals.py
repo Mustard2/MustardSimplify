@@ -129,7 +129,12 @@ class MUSTARDSIMPLIFY_OT_FastNormals(bpy.types.Operator):
         settings = bpy.context.scene.MustardSimplify_Settings
         settings.simplify_fastnormals_status = self.custom
 
-        context.area.tag_redraw()
+        try:
+            context.area.tag_redraw()
+        except Exception:
+            for window in bpy.context.window_manager.windows:
+                for area in window.screen.areas:
+                    area.tag_redraw()
 
         return {"FINISHED"}
 

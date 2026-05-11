@@ -13,12 +13,13 @@ from ..utils.execution_time import update_all_execution_time
 
 
 class MustardSimplify_SetModifier(bpy.types.PropertyGroup):
+    simplify: BoolProperty(default=True, name="Simplify")
+    execution_time: BoolProperty(default=False, name="Evaluate Execution Time")
+
     name: StringProperty(default="")
     disp_name: StringProperty(default="")
     icon: StringProperty(default="")
-    simplify: BoolProperty(default=True)
     type: StringProperty(default="OBJECT")
-    execution_time: BoolProperty(default=False)
 
     time: FloatProperty(default=0.0)
 
@@ -186,6 +187,13 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
         ]
     )
 
+    # 0: Simplify
+    # 1: Execution Times
+    execution_context: EnumProperty(
+        items=[("SIMPLIFY", "Simplify", ""), ("EXECUTION_TIME", "Execution Time", "")],
+        default="SIMPLIFY",
+    )
+
     @classmethod
     def poll(cls, context):
         # Enable operator only when the scene is not simplified
@@ -216,7 +224,10 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
 
         layout = self.layout
 
-        layout.prop(self, "type", expand=True)
+        if self.execution_context == "SIMPLIFY":
+            layout.prop(self, "type", expand=True)
+        else:
+            self.type = "OBJECT"
 
         box = layout.box()
 
@@ -227,30 +238,33 @@ class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
             for m in [x for x in modifiers if x.type == "OBJECT"]:
                 if m.name in ["ARRAY", "ARMATURE", "CLOTH"]:
                     col = row.column()
-                row2 = col.row()
-                row2.prop(m, "simplify", text="")
-                # Avoid missing icon error
-                try:
-                    row2.label(text=m.disp_name, icon=m.icon)
-                    row2.scale_x = 0.2
-                    row2.alert = m.time > 0.1
-                    if addon_prefs.debug:
-                        row2.label(
-                            text=str(int(m.time * 1000)) + " ms"
-                            if m.execution_time
-                            else ""
-                        )
-                    row2.scale_x = 1
+                row2 = col.row(align=True)
+                if self.execution_context == "SIMPLIFY":
+                    row2.prop(m, "simplify", text="")
+                elif self.execution_context == "EXECUTION_TIME":
                     row2.prop(
                         m,
                         "execution_time",
                         text="",
                         icon="TIME" if m.execution_time else "MOD_TIME",
                     )
+                    row2.scale_x = 1.0
+                # Avoid missing icon error
+                try:
+                    row2.label(text=m.disp_name, icon=m.icon)
                 except Exception:
                     row2.label(text=m.disp_name, icon="BLANK1")
 
-        if self.type == "GPENCIL":
+                # Debug: Show execution time in ms
+                if self.execution_context == "EXECUTION_TIME" and addon_prefs.debug:
+                    row3 = row2.row()
+                    row3.scale_x = 0.5
+                    row3.alert = m.time > 0.1
+                    row3.label(
+                        text=str(int(m.time * 1000)) + " ms" if m.execution_time else ""
+                    )
+
+        if self.type == "GPENCIL" and self.execution_context == "SIMPLIFY":
             mods = [x for x in modifiers if x.type == "GPENCIL"]
 
             order = [

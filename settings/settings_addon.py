@@ -60,7 +60,7 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
         col.prop(self, "viewport_button")
 
         col.separator()
-        col.prop(self, "advanced")
+        # col.prop(self, "advanced")
         col.prop(self, "experimental")
         col.prop(self, "debug")
 

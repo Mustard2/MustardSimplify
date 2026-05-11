@@ -91,7 +91,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
         row.prop(settings, "modifiers")
         row.operator(
             "mustard_simplify.menu_modifiers_select", icon="PREFERENCES", text=""
-        )
+        ).execution_context = "SIMPLIFY"
 
         row = col.row()
         row.prop(settings, "shape_keys")
@@ -143,12 +143,12 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                 "mustardsimplify_exception_uilist_index",
             )
             col = row.column(align=True)
+            col.operator(
+                "mustard_simplify.add_exception_selected",
+                text="",
+                icon="ADD",
+            )
             col.operator("mustard_simplify.remove_exception", icon="REMOVE", text="")
-
-            row = layout.row()
-            row.enabled = not settings.simplify_status
-            row.prop_search(settings, "exception_select", scene, "objects", text="")
-            row.operator("mustard_simplify.add_exception", text="", icon="ADD")
 
             if (
                 scene.mustardsimplify_exception_uilist_index > -1
@@ -176,7 +176,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     )
 
                     col = box.column(align=True)
-                    col.label(text="Properties to Simplify", icon="PROPERTIES")
 
                     row = col.row()
                     row.prop(obj, "visibility")
@@ -223,13 +222,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
     bl_parent_id = "MUSTARDSIMPLIFY_PT_Simplify"
     bl_options = {"DEFAULT_CLOSED"}
 
-    @classmethod
-    def poll(cls, context):
-        scene = context.scene
-        modifiers = scene.MustardSimplify_SetModifiers.modifiers
-        modifiers_with_time = [x for x in modifiers if x.execution_time]
-        return len(modifiers_with_time) > 0
-
     def draw_header_preset(self, context):
         layout = self.layout
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
@@ -248,12 +240,27 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
         modifiers_with_time = [x for x in modifiers if x.execution_time]
 
         row = layout.row()
+        row.operator(
+            "mustard_simplify.menu_modifiers_select",
+            icon="MODIFIER",
+            text="Select Modifiers",
+        ).execution_context = "EXECUTION_TIME"
+
+        if len(modifiers_with_time) < 1:
+            return
+
+        layout.separator()
+
+        row = layout.row()
         col = row.column()
         row2 = col.row(align=True)
         row2.prop(settings, "execution_times", icon="ANIM")
         row2.operator(
-            "mustard_simplify.update_execution_time", icon="UV_SYNC_SELECT", text=""
-        )
+            "screen.animation_play",
+            icon="PAUSE" if context.screen.is_animation_playing else "PLAY",
+            depress=context.screen.is_animation_playing,
+            text="",
+        ).reverse = False
         if settings.execution_times:
             col.prop(settings, "execution_times_frames_rate")
 
@@ -261,6 +268,13 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
         row2 = box.row()
         row2.prop(settings, "execution_time_order", expand=True)
         row2.scale_y = 1.2
+        row2.operator(
+            "mustard_simplify.update_execution_time",
+            icon="FILE_REFRESH",
+            text="",
+        )
+
+        col = box.column(align=True)
         for modifier in sorted(
             modifiers_with_time,
             key=(lambda x: x.name)
@@ -268,30 +282,25 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
             else (lambda y: int(y.time * 1000)),
             reverse=settings.execution_time_order == "TIME",
         ):
-            row2 = box.row()
+            row2 = col.row()
             row2.label(text=modifier.disp_name, icon=modifier.icon)
             row2.alert = modifier.time > 0.1
             row2.scale_x = 0.3
             row2.label(text=str(int(modifier.time * 1000)) + " ms")
 
         if addon_prefs.debug:
-            box.separator()
-            row2 = box.row()
+            col.separator()
+            row2 = col.row()
             row2.label(text="Execution Time Computation Overhead", icon="TIME")
             row2.scale_x = 0.3
             row2.alert = settings.execution_times_overhead > 0.1
             row2.label(text=str(int(settings.execution_times_overhead * 1000)) + " ms")
 
 
-class MUSTARDSIMPLIFY_PT_Simplify_Advanced(MainPanel, bpy.types.Panel):
-    bl_label = "Advanced"
+class MUSTARDSIMPLIFY_PT_Simplify_Others(MainPanel, bpy.types.Panel):
+    bl_label = "Others"
     bl_parent_id = "MUSTARDSIMPLIFY_PT_Simplify"
     bl_options = {"DEFAULT_CLOSED"}
-
-    @classmethod
-    def poll(cls, context):
-        addon_prefs = bpy.context.preferences.addons[base_package].preferences
-        return addon_prefs.advanced
 
     def draw_header_preset(self, context):
         layout = self.layout
@@ -299,7 +308,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Advanced(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "mustard_simplify.openlink", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#advanced"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#others"
 
     def draw(self, context):
         layout = self.layout
@@ -307,9 +316,13 @@ class MUSTARDSIMPLIFY_PT_Simplify_Advanced(MainPanel, bpy.types.Panel):
         prefs = context.preferences
         system = prefs.system
 
-        layout.label(text="Textures Size Limit")
-        layout.scale_x = 1.5
-        layout.prop(system, "gl_texture_limit", text="")
+        box = layout.box()
+        box.label(text="Textures", icon="TEXTURE_DATA")
+
+        row = box.row()
+        row.label(text="Size Limit")
+        row.scale_x = 1.5
+        row.prop(system, "gl_texture_limit", text="")
 
 
 def register():
@@ -317,11 +330,11 @@ def register():
     bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify_Options)
     bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify_Exceptions)
     bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes)
-    bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify_Advanced)
+    bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify_Others)
 
 
 def unregister():
-    bpy.utils.unregister_class(MUSTARDSIMPLIFY_PT_Simplify_Advanced)
+    bpy.utils.unregister_class(MUSTARDSIMPLIFY_PT_Simplify_Others)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_PT_Simplify_Exceptions)
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_PT_Simplify_Options)
