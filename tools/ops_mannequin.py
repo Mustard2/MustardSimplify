@@ -8,23 +8,6 @@ import bpy
 import numpy as np
 
 
-class SimpleOperatorState:
-    def store_state(self, context):
-        self._active = context.view_layer.objects.active
-        self._selected = [ob for ob in context.selected_objects]
-
-    def restore_state(self, context):
-        for ob in context.view_layer.objects:
-            ob.select_set(False)
-
-        for ob in self._selected:
-            if ob.name in bpy.data.objects:
-                ob.select_set(True)
-
-        if self._active and self._active.name in bpy.data.objects:
-            context.view_layer.objects.active = self._active
-
-
 def move_objects_to_collection(objs, coll):
     for ob in objs:
         # unlink from all current collections
@@ -32,16 +15,6 @@ def move_objects_to_collection(objs, coll):
             c.objects.unlink(ob)
 
         coll.objects.link(ob)
-
-
-def update_scene(context):
-    context.evaluated_depsgraph_get().update()
-
-
-def lock_all_transforms(ob):
-    ob.lock_location = (True, True, True)
-    ob.lock_rotation = (True, True, True)
-    ob.lock_scale = (True, True, True)
 
 
 def strip_name(name):
@@ -170,8 +143,9 @@ def set_world_matrix(ob, wmat):
 
 
 def set_parent(context, ob, rig, bone_name=None, update=True):
+    # Update the scene
     if update:
-        update_scene(context)
+        context.evaluated_depsgraph_get().update()
 
     if ob.parent == rig:
         return
@@ -266,10 +240,7 @@ def restore_modifiers(state):
         mod.show_viewport = val
 
 
-class MUSTARDSIMPLIFY_OT_AddProxy(
-    bpy.types.Operator,
-    SimpleOperatorState,
-):
+class MUSTARDSIMPLIFY_OT_AddProxy(bpy.types.Operator):
     bl_idname = "mustard_simplify.add_proxy"
     bl_label = "Add Proxys"
     bl_description = "Add proxys to selected meshes"
@@ -333,6 +304,21 @@ class MUSTARDSIMPLIFY_OT_AddProxy(
         description="Do not duplicate armature, and use the existing one",
         default=False,
     )
+
+    def store_state(self, context):
+        self._active = context.view_layer.objects.active
+        self._selected = [ob for ob in context.selected_objects]
+
+    def restore_state(self, context):
+        for ob in context.view_layer.objects:
+            ob.select_set(False)
+
+        for ob in self._selected:
+            if ob.name in bpy.data.objects:
+                ob.select_set(True)
+
+        if self._active and self._active.name in bpy.data.objects:
+            context.view_layer.objects.active = self._active
 
     def draw(self, context):
         layout = self.layout
@@ -658,7 +644,10 @@ class MUSTARDSIMPLIFY_OT_AddProxy(
 
             nob.location = head
 
-            lock_all_transforms(nob)
+            # Lock all transforms
+            ob.lock_location = (True, True, True)
+            ob.lock_rotation = (True, True, True)
+            ob.lock_scale = (True, True, True)
 
             if face_mats:
                 for f in me.polygons:
@@ -703,7 +692,8 @@ class MUSTARDSIMPLIFY_OT_AddProxy(
 
             generated.append((nob, bone))
 
-        update_scene(context)
+        # Update the scene
+        context.evaluated_depsgraph_get().update()
 
         result = []
 
