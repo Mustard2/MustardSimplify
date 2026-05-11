@@ -426,6 +426,31 @@ class MUSTARDSIMPLIFY_OT_AddProxy(
             )
             return {"CANCELLED"}
 
+        # Ensure at least one selected mesh has deform-bone vertex groups
+        valid_meshes = []
+
+        for mob in meshes:
+            has_deform_group = False
+
+            for vgrp in mob.vertex_groups:
+                bone = rig.data.bones.get(vgrp.name)
+
+                if bone and bone.use_deform:
+                    has_deform_group = True
+                    break
+
+            if has_deform_group:
+                valid_meshes.append(mob)
+
+        if not valid_meshes:
+            self.report(
+                {"ERROR"},
+                "Mustard Simplify - Selected meshes have no deform-bone vertex groups",
+            )
+            return {"CANCELLED"}
+
+        meshes = valid_meshes
+
         if self.useOriginalArmature:
             new_rig = rig
         else:
@@ -792,14 +817,8 @@ class MUSTARDSIMPLIFY_OT_AddProxy(
                 for poly in me.polygons:
                     poly.use_smooth = True
 
-                if hasattr(me, "has_custom_normals") and me.has_custom_normals:
-                    me.normals_split_custom_set(None)
-
-                if hasattr(me, "use_auto_smooth"):
-                    me.use_auto_smooth = True
-
-                if hasattr(me, "auto_smooth_angle"):
-                    me.auto_smooth_angle = 1.22173
+                if hasattr(me, "free_normals_split"):
+                    me.free_normals_split()
 
                 me.update()
 
