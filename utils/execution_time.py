@@ -1,4 +1,4 @@
-import time
+from time import time
 
 import bpy
 from bpy.app.handlers import persistent
@@ -35,10 +35,10 @@ def update_animation_execution_time(scene):
 
     start = 0.0
     if addon_prefs.debug:
-        start = time.time()
+        start = time()
 
     if not settings.execution_times:
-        settings.execution_times_overhead = time.time() - start
+        settings.execution_times_overhead = time() - start
         return
 
     if settings.execution_times_frames != 0:
@@ -79,7 +79,7 @@ def update_animation_execution_time(scene):
             area.tag_redraw()
 
     if addon_prefs.debug:
-        settings.execution_times_overhead = time.time() - start
+        settings.execution_times_overhead = time() - start
 
 
 class MUSTARDSIMPLIFY_OT_UpdateExecutionTime(bpy.types.Operator):
@@ -92,7 +92,7 @@ class MUSTARDSIMPLIFY_OT_UpdateExecutionTime(bpy.types.Operator):
         bpy.context.view_layer.update()
         update_all_execution_time()
         self.report(
-            {"INFO"}, "Mustard Simplify - Modifiers Execution Time have been updated."
+            {"INFO"}, "Mustard Simplify - Modifiers Execution Time has been updated."
         )
         return {"FINISHED"}
 

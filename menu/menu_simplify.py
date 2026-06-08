@@ -324,6 +324,11 @@ class MUSTARDSIMPLIFY_PT_Simplify_Others(MainPanel, bpy.types.Panel):
         row.scale_x = 1.5
         row.prop(system, "gl_texture_limit", text="")
 
+        layout.separator()
+
+        settings = context.scene.MustardSimplify_MuteUnusedNodesSettings
+        layout.prop(settings, "mute_unused_shader_nodes")
+
 
 def register():
     bpy.utils.register_class(MUSTARDSIMPLIFY_PT_Simplify)

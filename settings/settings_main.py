@@ -81,6 +81,18 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
         ),
     )
 
+    def poll_exception(self, object):
+        exceptions = bpy.context.scene.MustardSimplify_Exceptions.exceptions
+        exceptions = [x.exception for x in exceptions]
+        return object not in exceptions
+
+    exception_select: PointerProperty(
+        type=bpy.types.Object,
+        poll=poll_exception,
+        name="Object",
+        description="Object to add to exceptions",
+    )
+
     exception_collection: PointerProperty(
         type=bpy.types.Collection,
         name="Collection",
