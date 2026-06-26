@@ -69,6 +69,18 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
         layout = self.layout
         settings = scene.MustardSimplify_Settings
 
+        row = layout.row(align=True)
+        row.enabled = not settings.simplify_status
+        row.menu(
+            "MUSTARDSIMPLIFY_MT_SimplifyPresets",
+            text=bpy.types.MUSTARDSIMPLIFY_MT_SimplifyPresets.bl_label,
+            icon="PRESET",
+        )
+        row.operator("mustard_simplify.add_simplify_preset", text="", icon="ADD")
+        row.operator(
+            "mustard_simplify.add_simplify_preset", text="", icon="REMOVE"
+        ).remove_active = True
+
         row = layout.row()
         col = row.column()
         row.enabled = not settings.simplify_status

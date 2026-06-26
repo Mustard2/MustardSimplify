@@ -3,6 +3,7 @@ from . import (
     ops_settings_blender_simplify,
     ops_settings_modifiers,
     ops_settings_objects,
+    ops_settings_presets,
     ops_settings_shape_keys,
     ops_simplify,
     ops_viewport_button,
@@ -13,6 +14,7 @@ from . import (
 
 def register():
     simplify_status.register()
+    ops_settings_presets.register()
     ops_settings_shape_keys.register()
     ops_settings_modifiers.register()
     ops_settings_objects.register()
@@ -32,4 +34,5 @@ def unregister():
     ops_settings_objects.unregister()
     ops_settings_modifiers.unregister()
     ops_settings_shape_keys.unregister()
+    ops_settings_presets.unregister()
     simplify_status.unregister()
