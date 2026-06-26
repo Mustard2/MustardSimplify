@@ -69,13 +69,13 @@ class MustardSimplify_AddonPrefs(bpy.types.AddonPreferences):
 
         row = layout.row(align=True)
         row.operator(
-            "mustard_simplify.openlink", text="GitHub", icon="URL"
+            "wm.url_open", text="GitHub", icon="URL"
         ).url = self.url_MustardSimplify
         row.operator(
-            "mustard_simplify.openlink", text="User Guide", icon="URL"
+            "wm.url_open", text="User Guide", icon="URL"
         ).url = self.url_MustardSimplify_Tutorial
         row.operator(
-            "mustard_simplify.openlink", text="Report Bug", icon="URL"
+            "wm.url_open", text="Report Bug", icon="URL"
         ).url = self.url_MustardSimplify_ReportBug
 
 
