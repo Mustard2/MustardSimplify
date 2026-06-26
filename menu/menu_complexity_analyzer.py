@@ -17,7 +17,7 @@ class MUSTARDSIMPLIFY_PT_ComplexityAnalyzer(MainPanel, bpy.types.Panel):
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
             ).url = (
-                "https://github.com/Mustard2/MustardSimplify/wiki#complexity-analyzer"
+                "https://github.com/Mustard2/MustardSimplify/wiki/Tools-Complexity-Analyzer"
             )
 
     def draw(self, context):

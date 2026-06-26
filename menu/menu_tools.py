@@ -15,7 +15,7 @@ class MUSTARDSIMPLIFY_PT_Tools(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#tools"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Tools"
 
     def draw(self, context):
         layout = self.layout

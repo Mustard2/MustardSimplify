@@ -61,7 +61,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#simplify"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Simplify"
 
     def draw(self, context):
 
@@ -127,7 +127,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#exceptions"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Exceptions"
 
     def draw(self, context):
 
@@ -233,7 +233,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#execution-times"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Execution-Times"
 
     def draw(self, context):
         scene = context.scene
@@ -313,7 +313,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Others(MainPanel, bpy.types.Panel):
         if addon_prefs.wiki:
             layout.operator(
                 "wm.url_open", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#others"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Others"
 
     def draw(self, context):
         layout = self.layout
