@@ -103,8 +103,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
 
         col.prop(settings, "physics")
 
-        col.prop(settings, "normals_auto_smooth")
-
 
 class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
     bl_label = "Exceptions"
@@ -195,11 +193,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     row = col.row()
                     row.prop(obj, "drivers")
                     row.enabled = settings.drivers
-
-                    row = col.row()
-                    row.enabled = obj.exception.type == "MESH"
-                    row.prop(obj, "normals_auto_smooth")
-                    row.enabled = settings.normals_auto_smooth
 
                     if addon_prefs.experimental:
                         row = col.row()

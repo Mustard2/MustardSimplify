@@ -32,7 +32,6 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 or settings.shape_keys
                 or settings.physics
                 or settings.drivers
-                or settings.normals_auto_smooth
             )
         else:
             return True
@@ -407,55 +406,6 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                     + obj.name
                                     + " (shared mesh data) - already restored."
                                 )
-
-            # Normals Auto Smooth
-            if (
-                settings.normals_auto_smooth
-                and obj.type == "MESH"
-                and (eo.normals_auto_smooth if eo is not None else True)
-            ):
-
-                def get_status_norm_autosmooth(obj):
-                    for modifier in [x for x in obj.modifiers if x.type == "NODES"]:
-                        if modifier.node_group is None:
-                            continue
-                        if modifier.node_group.name != "Smooth by Angle":
-                            continue
-                        return modifier.show_viewport
-                    return False
-
-                def update_norm_autosmooth(obj, status):
-
-                    if bpy.app.version < (4, 1, 0):
-                        obj.data.use_auto_smooth = status
-                        return
-
-                    for modifier in [x for x in obj.modifiers if x.type == "NODES"]:
-                        if modifier.node_group is None:
-                            continue
-                        if modifier.node_group.name != "Smooth by Angle":
-                            continue
-                        modifier.show_viewport = status
-
-                if self.enable_simplify:
-                    status = get_status_norm_autosmooth(obj)
-                    obj.MustardSimplify_Status.normals_auto_smooth = status
-                    update_norm_autosmooth(obj, False)
-                    if addon_prefs.debug:
-                        print(
-                            "Normals Auto Smooth disabled (previous status: "
-                            + str(status)
-                            + ")."
-                        )
-                else:
-                    status = obj.MustardSimplify_Status.normals_auto_smooth
-                    update_norm_autosmooth(obj, status)
-                    if addon_prefs.debug:
-                        print(
-                            "Normals Auto Smooth reverted to status: "
-                            + str(status)
-                            + "."
-                        )
 
         # SCENE
         if settings.physics:

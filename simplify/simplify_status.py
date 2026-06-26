@@ -18,8 +18,6 @@ class MustardSimplify_ObjectStatus(bpy.types.PropertyGroup):
     # Object visibility status
     visibility: bpy.props.BoolProperty(default=True)
 
-    # Normals Auto Smooth status
-    normals_auto_smooth: bpy.props.BoolProperty(default=True)
     # Modifiers status
     modifiers: bpy.props.CollectionProperty(type=MustardSimplify_ModifierStatus)
     # Shape Keys status
@@ -44,11 +42,6 @@ class MustardSimplify_Exception(bpy.types.PropertyGroup):
     )
     drivers: bpy.props.BoolProperty(
         name="Drivers", description="Disable Drivers", default=False
-    )
-    normals_auto_smooth: bpy.props.BoolProperty(
-        name="Normals Auto Smooth",
-        description="Disable Normals Auto Smooth",
-        default=False,
     )
     visibility: bpy.props.BoolProperty(
         name="Visibility", description="Hide the Object", default=False

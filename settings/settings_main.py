@@ -72,12 +72,6 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     )
     # Drivers
     drivers: BoolProperty(name="Drivers", description="Disable Drivers", default=True)
-    # Normals Auto Smooth
-    normals_auto_smooth: BoolProperty(
-        name="Normals Auto Smooth",
-        description="Disable Normals Auto Smooth",
-        default=True,
-    )
 
     # Objects
     objects: BoolProperty(name="Objects", description="Hide objects", default=False)

@@ -140,11 +140,6 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
         draw_icon(row, "MODIFIER", item.modifiers and settings.modifiers)
         draw_icon(row, "SHAPEKEY_DATA", item.shape_keys and settings.shape_keys)
         draw_icon(row, "DRIVER", item.drivers and settings.drivers)
-        draw_icon(
-            row,
-            "NORMALS_FACE",
-            item.normals_auto_smooth and settings.normals_auto_smooth,
-        )
 
 
 def register():
