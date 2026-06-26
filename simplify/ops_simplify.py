@@ -113,22 +113,20 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
         # OBJECTS
 
-        # Remove objects in the exception collection
-        objects = [x for x in context.scene.objects if x.override_library is None]
+        # Exclude purely linked objects (no override) as they are read-only;
+        # library override objects (override_library is not None) are locally editable
+        objects = [
+            x
+            for x in context.scene.objects
+            if x.library is None or x.override_library is not None
+        ]
         if settings.exception_collection is not None:
-            objects = [
-                x
-                for x in context.scene.objects
-                if x
-                not in [
-                    x
-                    for x in (
-                        settings.exception_collection.all_objects
-                        if settings.exception_include_subcollections
-                        else settings.exception_collection.objects
-                    )
-                ]
-            ]
+            exception_objs = set(
+                settings.exception_collection.all_objects
+                if settings.exception_include_subcollections
+                else settings.exception_collection.objects
+            )
+            objects = [x for x in objects if x not in exception_objs]
 
         # Create list of objects to simplify
         objects_ignore = settings.modifiers
