@@ -86,6 +86,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                     for layer in action.layers:
                         for strip in layer.strips:
                             channelbag = strip.channelbag(slot)
+                            if channelbag is None:
+                                continue
                             for fcu in channelbag.fcurves:
                                 if fcu.data_path == attr:
                                     return len(fcu.keyframe_points) > 0
