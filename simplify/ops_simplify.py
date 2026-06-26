@@ -38,6 +38,21 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
     def execute(self, context):
 
+        def get_obj_status(scene, obj):
+            # Standard Objects
+            if obj.override_library is None:
+                return obj.MustardSimplify_Status
+
+            # Library-override objects have read-only custom property collections,
+            # so their status is stored on the Scene.
+            collection = scene.MustardSimplify_Status.objects
+            for el in collection:
+                if el.object == obj:
+                    return el
+            item = collection.add()
+            item.object = obj
+            return item
+
         def add_prop_status(collection, item):
             for el in collection:
                 if el.name == item[0] and el.status == item[1]:
@@ -127,6 +142,10 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             )
             objects = [x for x in objects if x not in exception_objs]
 
+        # Scene-side status entries are only used for library-override objects.
+        if self.enable_simplify:
+            scene.MustardSimplify_Status.objects.clear()
+
         # Create list of objects to simplify
         objects_ignore = settings.modifiers
         if settings.modifiers:
@@ -158,6 +177,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
 
         for obj in objects:
             eo = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
+            obj_status = get_obj_status(scene, obj)
 
             if addon_prefs.debug:
                 print("\n ----------- Object: " + obj.name + " -----------")
@@ -169,7 +189,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             ):
                 if self.enable_simplify:
                     status = obj.hide_viewport
-                    obj.MustardSimplify_Status.visibility = status
+                    obj_status.visibility = status
                     obj.hide_viewport = True
                     if addon_prefs.debug:
                         print(
@@ -180,7 +200,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             + ")."
                         )
                 else:
-                    status = obj.MustardSimplify_Status.visibility
+                    status = obj_status.visibility
                     obj.hide_viewport = status
                     if addon_prefs.debug:
                         print(
@@ -199,16 +219,14 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 modifiers = [x for x in obj.modifiers if x.type not in modifiers_ignore]
 
                 if self.enable_simplify:
-                    obj.MustardSimplify_Status.modifiers.clear()
+                    obj_status.modifiers.clear()
                     for mod in modifiers:
                         # Skip Normals Smooth modifier
                         if mod.type == "NODES" and mod.node_group is not None:
                             if mod.node_group.name == "Smooth by Angle":
                                 continue
                         status = mod.show_viewport
-                        add_prop_status(
-                            obj.MustardSimplify_Status.modifiers, [mod.name, status]
-                        )
+                        add_prop_status(obj_status.modifiers, [mod.name, status])
                         mod.show_viewport = False
                         if addon_prefs.debug:
                             print(
@@ -224,9 +242,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                         if mod.type == "NODES" and mod.node_group is not None:
                             if mod.node_group.name == "Smooth by Angle":
                                 continue
-                        name, status = find_prop_status(
-                            obj.MustardSimplify_Status.modifiers, mod
-                        )
+                        name, status = find_prop_status(obj_status.modifiers, mod)
                         if name != "":
                             mod.show_viewport = status
                             if addon_prefs.debug:
@@ -252,7 +268,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 )
 
                 if self.enable_simplify:
-                    obj.MustardSimplify_Status.shape_keys.clear()
+                    obj_status.shape_keys.clear()
                     if obj.data.shape_keys is not None:
                         # Only process shape keys if this mesh data hasn't been
                         # processed yet
@@ -261,7 +277,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                 escaped_skName = escape_identifier(sk.name)
                                 status = sk.mute
                                 add_prop_status(
-                                    obj.MustardSimplify_Status.shape_keys,
+                                    obj_status.shape_keys,
                                     [sk.name, status],
                                 )
                                 attr = f'key_blocks["{escaped_skName}"].value'
@@ -314,17 +330,18 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             # Use O(1) dictionary lookup instead of O(N) loop
                             if (
                                 source_obj is not None
-                                and len(source_obj.MustardSimplify_Status.shape_keys)
+                                and len(get_obj_status(scene, source_obj).shape_keys)
                                 > 0
                             ):
                                 # Copy the original state from the source object
                                 for sk in obj.data.shape_keys.key_blocks:
                                     name, status = find_prop_status(
-                                        source_obj.MustardSimplify_Status.shape_keys, sk
+                                        get_obj_status(scene, source_obj).shape_keys,
+                                        sk,
                                     )
                                     if name != "":
                                         add_prop_status(
-                                            obj.MustardSimplify_Status.shape_keys,
+                                            obj_status.shape_keys,
                                             [sk.name, status],
                                         )
                                 if addon_prefs.debug:
@@ -343,12 +360,12 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             # if it has status, otherwise use the source_obj from
                             # dictionary (O(1) lookup)
                             restore_source_obj = None
-                            if len(obj.MustardSimplify_Status.shape_keys) > 0:
+                            if len(obj_status.shape_keys) > 0:
                                 # Current object has saved status, use it
                                 restore_source_obj = obj
                             elif (
                                 source_obj is not None
-                                and len(source_obj.MustardSimplify_Status.shape_keys)
+                                and len(get_obj_status(scene, source_obj).shape_keys)
                                 > 0
                             ):
                                 # Current object has no status, use source_obj from
@@ -365,7 +382,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                             if restore_source_obj is not None:
                                 for sk in obj.data.shape_keys.key_blocks:
                                     name, status = find_prop_status(
-                                        restore_source_obj.MustardSimplify_Status.shape_keys,
+                                        get_obj_status(
+                                            scene, restore_source_obj
+                                        ).shape_keys,
                                         sk,
                                     )
                                     if name != "":
@@ -404,6 +423,9 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                     + obj.name
                                     + " (shared mesh data) - already restored."
                                 )
+
+        if not self.enable_simplify:
+            scene.MustardSimplify_Status.objects.clear()
 
         # SCENE
         if settings.physics:
