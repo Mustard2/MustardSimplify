@@ -133,20 +133,28 @@ def is_object_visible(obj):
 
 
 def collect_objects(context):
-    """Return a list of (obj, value) for the visible meshes according to the
-    current mode. Hidden objects are excluded from the calculation."""
+    """Return a list of (obj, value) for the visible objects according to the
+    current mode. POLYS and TEXTURES are mesh-only; MODIFIERS includes every
+    type that can carry modifiers. Hidden objects are excluded from the
+    calculation."""
     settings = context.scene.MustardSimplify_Settings
     depsgraph = context.evaluated_depsgraph_get()
 
     data = []
     for obj in context.scene.objects:
-        if obj.type != "MESH" or not is_object_visible(obj):
+        if not is_object_visible(obj):
             continue
         if settings.complexity_analyzer_mode == "POLYS":
+            if obj.type != "MESH":
+                continue
             data.append((obj, eval_poly_count(obj, depsgraph)))
         elif settings.complexity_analyzer_mode == "TEXTURES":
+            if obj.type != "MESH":
+                continue
             data.append((obj, mesh_texture_pixels(obj)))
         else:  # MODIFIERS
+            if obj.type not in MODIFIER_SUPPORTED_TYPES:
+                continue
             data.append((obj, object_modifier_count(obj)))
     return data
 
@@ -162,7 +170,7 @@ def heatmap_color(value, vmin, vmax):
         t = max(0.0, min(1.0, t))
     hue = (1.0 - t) * 0.67  # blue (0.67) -> red (0.0)
     r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-    return (r, g, b, 1.0)
+    return r, g, b, 1.0
 
 
 # ---------------------- Backup / restore ----------------------
