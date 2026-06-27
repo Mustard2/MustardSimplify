@@ -93,8 +93,7 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
         except OSError as err:
             self.report(
                 {"WARNING"},
-                "Mustard Simplify - Could not write selection data to preset: %s"
-                % err,
+                "Mustard Simplify - Could not write selection data to preset: %s" % err,
             )
 
     @staticmethod
