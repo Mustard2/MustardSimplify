@@ -66,26 +66,35 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
             return
 
         scene = context.scene
-        with open(filepath, "a", encoding="utf-8") as file_preset:
-            self._write_collection(
-                file_preset,
-                comment="Modifiers selection",
-                refresh_op="bpy.ops.mustard_simplify.refresh_modifiers()",
-                collection_path="bpy.context.scene.MustardSimplify_SetModifiers"
-                ".modifiers",
-                state={
-                    m.name: m.simplify
-                    for m in scene.MustardSimplify_SetModifiers.modifiers
-                },
-            )
-            self._write_collection(
-                file_preset,
-                comment="Objects selection",
-                refresh_op="bpy.ops.mustard_simplify.refresh_objects()",
-                collection_path="bpy.context.scene.MustardSimplify_SetObjects.objects",
-                state={
-                    o.name: o.simplify for o in scene.MustardSimplify_SetObjects.objects
-                },
+        try:
+            with open(filepath, "a", encoding="utf-8") as file_preset:
+                self._write_collection(
+                    file_preset,
+                    comment="Modifiers selection",
+                    refresh_op="bpy.ops.mustard_simplify.refresh_modifiers()",
+                    collection_path="bpy.context.scene.MustardSimplify_SetModifiers"
+                    ".modifiers",
+                    state={
+                        m.name: m.simplify
+                        for m in scene.MustardSimplify_SetModifiers.modifiers
+                    },
+                )
+                self._write_collection(
+                    file_preset,
+                    comment="Objects selection",
+                    refresh_op="bpy.ops.mustard_simplify.refresh_objects()",
+                    collection_path="bpy.context.scene.MustardSimplify_SetObjects"
+                    ".objects",
+                    state={
+                        o.name: o.simplify
+                        for o in scene.MustardSimplify_SetObjects.objects
+                    },
+                )
+        except OSError as err:
+            self.report(
+                {"WARNING"},
+                "Mustard Simplify - Could not write selection data to preset: %s"
+                % err,
             )
 
     @staticmethod
