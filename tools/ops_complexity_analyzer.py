@@ -220,7 +220,6 @@ def apply_heatmap(context):
     settings = context.scene.MustardSimplify_Settings
     data = collect_objects(context)
     if not data:
-        settings.complexity_analyzer_active = True
         return 0
 
     # Restore any previously colored object no longer in scope before re-applying.
@@ -415,7 +414,12 @@ class MUSTARDSIMPLIFY_OT_ComplexityAnalyzerToggle(bpy.types.Operator):
         if settings.complexity_analyzer_active:
             disable_heatmap(context)
         else:
-            apply_heatmap(context)
+            res = apply_heatmap(context)
+            if res == 0:
+                self.report(
+                    {"WARNING"},
+                    "Mustard Simplify - No Objects to analyze",
+                )
         return {"FINISHED"}
 
 
