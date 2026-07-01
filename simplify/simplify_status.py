@@ -13,22 +13,31 @@ class MustardSimplify_ShapeKeysStatus(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(default="")
 
 
-# Class with all the settings variables
+# Per-object status.
+# Stored on the Object itself for normal objects (backwards compatible), and on
+# the Scene (keyed by the object pointer) for library-override objects, whose
+# custom property collections are read-only.
 class MustardSimplify_ObjectStatus(bpy.types.PropertyGroup):
     # Object visibility status
     visibility: bpy.props.BoolProperty(default=True)
 
-    # Normals Auto Smooth status
-    normals_auto_smooth: bpy.props.BoolProperty(default=True)
     # Modifiers status
     modifiers: bpy.props.CollectionProperty(type=MustardSimplify_ModifierStatus)
     # Shape Keys status
     shape_keys: bpy.props.CollectionProperty(type=MustardSimplify_ShapeKeysStatus)
 
+    # Object reference (used as key when stored on the Scene)
+    object: bpy.props.PointerProperty(type=bpy.types.Object)
+
 
 # Class to store the scene status
 class MustardSimplify_SceneStatus(bpy.types.PropertyGroup):
     rigidbody_world: bpy.props.BoolProperty(default=False)
+
+    # Per-object status entries (keyed by the object pointer)
+    # This is a fallback when the per-Object simplification options can not be
+    # saved directly on the Object (for instace for linked Objects)
+    objects: bpy.props.CollectionProperty(type=MustardSimplify_ObjectStatus)
 
 
 # Classes to manage exceptions
@@ -44,11 +53,6 @@ class MustardSimplify_Exception(bpy.types.PropertyGroup):
     )
     drivers: bpy.props.BoolProperty(
         name="Drivers", description="Disable Drivers", default=False
-    )
-    normals_auto_smooth: bpy.props.BoolProperty(
-        name="Normals Auto Smooth",
-        description="Disable Normals Auto Smooth",
-        default=False,
     )
     visibility: bpy.props.BoolProperty(
         name="Visibility", description="Hide the Object", default=False

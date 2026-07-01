@@ -8,6 +8,24 @@ from bpy.props import (
 )
 
 
+def _complexity_analyzer_mode_update(context):
+    # Re-apply the heatmap instantly when the mode changes while active.
+    from ..tools import ops_complexity_analyzer
+
+    if context.scene.MustardSimplify_Settings.complexity_analyzer_active:
+        ops_complexity_analyzer.apply_heatmap(context)
+
+
+def _complexity_analyzer_live_update_update(context):
+    # Register/unregister the live timer when the toggle flips.
+    from ..tools import ops_complexity_analyzer
+
+    if context.scene.MustardSimplify_Settings.complexity_analyzer_live_update:
+        ops_complexity_analyzer.register_live_handler()
+    else:
+        ops_complexity_analyzer.unregister_live_handler()
+
+
 class MustardSimplify_Settings(bpy.types.PropertyGroup):
     # Modifiers
     blender_simplify: BoolProperty(
@@ -54,12 +72,6 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     )
     # Drivers
     drivers: BoolProperty(name="Drivers", description="Disable Drivers", default=True)
-    # Normals Auto Smooth
-    normals_auto_smooth: BoolProperty(
-        name="Normals Auto Smooth",
-        description="Disable Normals Auto Smooth",
-        default=True,
-    )
 
     # Objects
     objects: BoolProperty(name="Objects", description="Hide objects", default=False)
@@ -93,6 +105,46 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
         "full exceptions.\nDisable to add only the Objects directly in the added "
         "collection",
     )
+
+    # Complexity Analyzer
+    complexity_analyzer_mode: EnumProperty(
+        name="Show",
+        description="What property to visualize across the scene",
+        items=(
+            (
+                "POLYS",
+                "Polygon count",
+                "Color meshes by the number of polygons (modifiers included)",
+                "MESH_DATA",
+                0,
+            ),
+            (
+                "TEXTURES",
+                "Texture resolution",
+                "Color meshes by the total pixel count of every texture across their "
+                "materials",
+                "TEXTURE",
+                1,
+            ),
+            (
+                "MODIFIERS",
+                "Modifier number",
+                "Color meshes by the number of active modifiers on each object",
+                "MODIFIER",
+                2,
+            ),
+        ),
+        default="POLYS",
+        update=lambda self, context: _complexity_analyzer_mode_update(context),
+    )
+    complexity_analyzer_live_update: BoolProperty(
+        name="Live update",
+        description="Continuously refresh the heatmap as the scene changes.\n"
+        "Performance cost: re-evaluates every mesh on every update",
+        default=False,
+        update=lambda self, context: _complexity_analyzer_live_update_update(context),
+    )
+    complexity_analyzer_active: BoolProperty(default=False)
 
     # Internal Settings
     simplify_fastnormals_status: BoolProperty(default=False)

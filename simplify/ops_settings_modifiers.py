@@ -168,6 +168,18 @@ def define_modifiers(scene):
             print("Mustard Simplify - Modifiers List generated")
 
 
+class MUSTARDSIMPLIFY_OT_RefreshModifiers(bpy.types.Operator):
+    """Build the modifiers list if it has not been generated yet"""
+
+    bl_idname = "mustard_simplify.refresh_modifiers"
+    bl_label = "Refresh Modifiers List"
+    bl_options = {"INTERNAL"}
+
+    def execute(self, context):
+        define_modifiers(context.scene)
+        return {"FINISHED"}
+
+
 class MUSTARDSIMPLIFY_OT_MenuModifiersSelect(bpy.types.Operator):
     """Select the modifiers affected by the simplification process"""
 
@@ -329,11 +341,13 @@ def register():
         type=MustardSimplify_SetModifiers
     )
 
+    bpy.utils.register_class(MUSTARDSIMPLIFY_OT_RefreshModifiers)
     bpy.utils.register_class(MUSTARDSIMPLIFY_OT_MenuModifiersSelect)
 
 
 def unregister():
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_MenuModifiersSelect)
+    bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_RefreshModifiers)
 
     del bpy.types.Scene.MustardSimplify_SetModifiers
     bpy.utils.unregister_class(MustardSimplify_SetModifiers)

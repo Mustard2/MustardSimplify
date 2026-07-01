@@ -60,14 +60,26 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs.wiki:
             layout.operator(
-                "mustard_simplify.openlink", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#simplify"
+                "wm.url_open", text="", icon="QUESTION"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Simplify"
 
     def draw(self, context):
 
         scene = context.scene
         layout = self.layout
         settings = scene.MustardSimplify_Settings
+
+        row = layout.row(align=True)
+        row.enabled = not settings.simplify_status
+        row.menu(
+            "MUSTARDSIMPLIFY_MT_SimplifyPresets",
+            text=bpy.types.MUSTARDSIMPLIFY_MT_SimplifyPresets.bl_label,
+            icon="PRESET",
+        )
+        row.operator("mustard_simplify.add_simplify_preset", text="", icon="ADD")
+        row.operator(
+            "mustard_simplify.add_simplify_preset", text="", icon="REMOVE"
+        ).remove_active = True
 
         row = layout.row()
         col = row.column()
@@ -103,8 +115,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
 
         col.prop(settings, "physics")
 
-        col.prop(settings, "normals_auto_smooth")
-
 
 class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
     bl_label = "Exceptions"
@@ -116,8 +126,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs.wiki:
             layout.operator(
-                "mustard_simplify.openlink", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#exceptions"
+                "wm.url_open", text="", icon="QUESTION"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Exceptions"
 
     def draw(self, context):
 
@@ -196,11 +206,6 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     row.prop(obj, "drivers")
                     row.enabled = settings.drivers
 
-                    row = col.row()
-                    row.enabled = obj.exception.type == "MESH"
-                    row.prop(obj, "normals_auto_smooth")
-                    row.enabled = settings.normals_auto_smooth
-
                     if addon_prefs.experimental:
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
@@ -227,8 +232,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_ExecutionTimes(MainPanel, bpy.types.Panel):
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs.wiki:
             layout.operator(
-                "mustard_simplify.openlink", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#execution-times"
+                "wm.url_open", text="", icon="QUESTION"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Execution-Times"
 
     def draw(self, context):
         scene = context.scene
@@ -307,8 +312,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_Others(MainPanel, bpy.types.Panel):
         addon_prefs = bpy.context.preferences.addons[base_package].preferences
         if addon_prefs.wiki:
             layout.operator(
-                "mustard_simplify.openlink", text="", icon="QUESTION"
-            ).url = "https://github.com/Mustard2/MustardSimplify/wiki#others"
+                "wm.url_open", text="", icon="QUESTION"
+            ).url = "https://github.com/Mustard2/MustardSimplify/wiki/Others"
 
     def draw(self, context):
         layout = self.layout

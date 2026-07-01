@@ -15,6 +15,72 @@ class MustardSimplify_SetObjects(bpy.types.PropertyGroup):
     objects: CollectionProperty(type=MustardSimplify_SetObject)
 
 
+def define_objects(scene):
+
+    def add_object(collection, name, disp_name, icon, simplify):
+        for el in collection:
+            if el.name == name:
+                return False
+        add_item = collection.add()
+        add_item.name = name
+        add_item.disp_name = disp_name
+        add_item.icon = icon
+        add_item.simplify = simplify
+        return True
+
+    settings = scene.MustardSimplify_Settings
+    objects = scene.MustardSimplify_SetObjects.objects
+    addon_prefs = bpy.context.preferences.addons[base_package].preferences
+
+    # Extract type of Objects
+    rna = bpy.ops.object.add.get_rna_type()
+    objs_list = rna.bl_rna.properties["type"].enum_items.keys()
+
+    # Make the list
+    # This is done at run-time, so it should be version agnostic
+    if len(objs_list) != len(objects):
+        objects.clear()
+
+        for m in objs_list:
+            # Change the displayed name
+            disp_name = m.replace("_", " ")
+            disp_name = disp_name.title()
+
+            icon = m + "_DATA"
+            simplify = True
+
+            # Manage single exceptions
+            if m in ["LIGHT_PROBE"]:
+                icon = "OUTLINER_DATA_LIGHTPROBE"
+            elif m in ["SPEAKER"]:
+                icon = "OUTLINER_DATA_SPEAKER"
+            elif m in ["GPENCIL", "GREASEPENCIL"]:
+                disp_name = "Grease Pencil"
+                if m == "GPENCIL":
+                    disp_name += " (old)"
+                icon = "OUTLINER_DATA_GREASEPENCIL"
+
+            if m in settings.objects_ignore:
+                simplify = False
+
+            add_object(objects, m, disp_name, icon, simplify)
+
+        if addon_prefs.debug:
+            print("Mustard Simplify - Objects List generated for Objects")
+
+
+class MUSTARDSIMPLIFY_OT_RefreshObjects(bpy.types.Operator):
+    """Build the Objects list if it has not been generated yet"""
+
+    bl_idname = "mustard_simplify.refresh_objects"
+    bl_label = "Refresh Objects List"
+    bl_options = {"INTERNAL"}
+
+    def execute(self, context):
+        define_objects(context.scene)
+        return {"FINISHED"}
+
+
 class MUSTARDSIMPLIFY_OT_MenuObjectSelect(bpy.types.Operator):
     """Select the Objects affected by the simplification process"""
 
@@ -31,59 +97,7 @@ class MUSTARDSIMPLIFY_OT_MenuObjectSelect(bpy.types.Operator):
         return {"FINISHED"}
 
     def invoke(self, context, event):
-
-        def add_object(collection, name, disp_name, icon, simplify):
-            for el in collection:
-                if el.name == name:
-                    return False
-            add_item = collection.add()
-            add_item.name = name
-            add_item.disp_name = disp_name
-            add_item.icon = icon
-            add_item.simplify = simplify
-            return True
-
-        scene = bpy.context.scene
-        settings = scene.MustardSimplify_Settings
-        objects = scene.MustardSimplify_SetObjects.objects
-        addon_prefs = bpy.context.preferences.addons[base_package].preferences
-
-        # Extract type of Objects
-        rna = bpy.ops.object.add.get_rna_type()
-        objs_list = rna.bl_rna.properties["type"].enum_items.keys()
-
-        # Make the list
-        # This is done at run-time, so it should be version agnostic
-        if len(objs_list) != len(objects):
-            objects.clear()
-
-            for m in objs_list:
-                # Change the displayed name
-                disp_name = m.replace("_", " ")
-                disp_name = disp_name.title()
-
-                icon = m + "_DATA"
-                simplify = True
-
-                # Manage single exceptions
-                if m in ["LIGHT_PROBE"]:
-                    icon = "OUTLINER_DATA_LIGHTPROBE"
-                elif m in ["SPEAKER"]:
-                    icon = "OUTLINER_DATA_SPEAKER"
-                elif m in ["GPENCIL", "GREASEPENCIL"]:
-                    disp_name = "Grease Pencil"
-                    if m == "GPENCIL":
-                        disp_name += " (old)"
-                    icon = "OUTLINER_DATA_GREASEPENCIL"
-
-                if m in settings.objects_ignore:
-                    simplify = False
-
-                add_object(objects, m, disp_name, icon, simplify)
-
-            if addon_prefs.debug:
-                print("Mustard Simplify - Objects List generated for Objects")
-
+        define_objects(context.scene)
         return context.window_manager.invoke_props_dialog(self, width=780)
 
     def draw(self, context):
@@ -117,11 +131,13 @@ def register():
         type=MustardSimplify_SetObjects
     )
 
+    bpy.utils.register_class(MUSTARDSIMPLIFY_OT_RefreshObjects)
     bpy.utils.register_class(MUSTARDSIMPLIFY_OT_MenuObjectSelect)
 
 
 def unregister():
     bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_MenuObjectSelect)
+    bpy.utils.unregister_class(MUSTARDSIMPLIFY_OT_RefreshObjects)
 
     del bpy.types.Scene.MustardSimplify_SetObjects
     bpy.utils.unregister_class(MustardSimplify_SetObjects)
