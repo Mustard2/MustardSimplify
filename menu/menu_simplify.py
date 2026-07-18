@@ -224,13 +224,13 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
 
                     row = col.row()
                     row.enabled = not settings.simplify_status and (
-                        scene.render.engine == "CYCLES"
+                        obj.exception.type == "MESH"
+                        and scene.render.engine == "CYCLES"
                         and cscene is not None
                         and (cscene.use_camera_cull or cscene.use_distance_cull)
                         and settings.culling
                     )
                     row.label(text="", icon="HIDE_OFF")
-                    row.enabled = obj.exception.type == "MESH"
                     row.prop(obj, "culling", text="Cycles Culling")
 
                     if addon_prefs.experimental:
