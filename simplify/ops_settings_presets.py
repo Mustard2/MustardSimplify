@@ -18,6 +18,30 @@ PRESET_VALUES = [
     "settings.physics",
 ]
 
+# Blender Simplify settings
+BLENDER_SIMPLIFY_PRESET_VALUES = [
+    "rd.simplify_subdivision",
+    "rd.simplify_child_particles",
+    "rd.simplify_volumes",
+    "rd.use_simplify_normals",
+    "rd.simplify_subdivision_render",
+    "rd.simplify_child_particles_render",
+]
+
+# Cycles-only settings
+CYCLES_SIMPLIFY_PRESET_VALUES = [
+    "cscene.texture_limit",
+    "cscene.texture_limit_render",
+    "cscene.use_camera_cull",
+    "cscene.camera_cull_margin",
+    "cscene.use_distance_cull",
+    "cscene.distance_cull_margin",
+]
+CYCLES_TEXTURE_RESOLUTION_PRESET_VALUES = [
+    "cscene.texture_resolution",
+    "cscene.texture_resolution_render",
+]
+
 PRESET_SUBDIR = "mustard_simplify/simplify"
 
 
@@ -37,8 +61,12 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
     bl_label = "Add Simplify Preset"
     preset_menu = "MUSTARDSIMPLIFY_MT_SimplifyPresets"
 
-    preset_defines = ["settings = bpy.context.scene.MustardSimplify_Settings"]
-    preset_values = PRESET_VALUES
+    preset_defines = [
+        "settings = bpy.context.scene.MustardSimplify_Settings",
+        "rd = bpy.context.scene.render",
+        "cscene = bpy.context.scene.cycles "
+        "if hasattr(bpy.context.scene, 'cycles') else None",
+    ]
     preset_subdir = PRESET_SUBDIR
 
     @classmethod
@@ -48,12 +76,18 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
         return not settings.simplify_status
 
     def execute(self, context):
+        # Save Blender Simplify setings
+        scene = context.scene
+        preset_values = list(PRESET_VALUES) + list(BLENDER_SIMPLIFY_PRESET_VALUES)
+        if hasattr(scene, "cycles"):
+            preset_values += CYCLES_SIMPLIFY_PRESET_VALUES
+            if hasattr(scene.cycles, "texture_resolution"):
+                preset_values += CYCLES_TEXTURE_RESOLUTION_PRESET_VALUES
+        self.preset_values = preset_values
+
         result = super().execute(context)
 
-        # The per-modifier and per-object "simplify" selections live in
-        # CollectionProperties, which AddPresetBase cannot serialize. On add, append
-        # them to the generated preset file so they are restored together with the
-        # other settings.
+        # Save the per-modifier and per-object settings
         is_remove = self.remove_name or self.remove_active
         if "FINISHED" in result and not is_remove:
             self._append_collections(context)
@@ -62,6 +96,7 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
 
     def _append_collections(self, context):
         filepath = self._preset_filepath()
+
         if filepath is None or not os.path.isfile(filepath):
             return
 
@@ -109,15 +144,16 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
         )
 
     def _preset_filepath(self):
-        # Mirror the path AddPresetBase uses to write the preset file
         name = self.name.strip()
         if not name:
             return None
+
         filename = self.as_filename(name) + ".py"
         target_path = os.path.join("presets", self.preset_subdir)
         target_path = bpy.utils.user_resource("SCRIPTS", path=target_path)
         if not target_path:
             return None
+
         return os.path.join(target_path, filename)
 
 

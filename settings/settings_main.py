@@ -31,6 +31,15 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     blender_simplify: BoolProperty(
         name="Blender Simplify", description="Enable Blender Simplify", default=True
     )
+    blender_simplify_engine: EnumProperty(
+        name="Engine",
+        description="Render engine whose Simplify settings should be shown",
+        default="CYCLES",
+        items=(
+            ("EEVEE", "Eevee", "Show Eevee Simplify settings", "SHADING_RENDERED", 0),
+            ("CYCLES", "Cycles", "Show Cycles Simplify settings", "SCENE", 1),
+        ),
+    )
     # Modifiers
     modifiers: BoolProperty(
         name="Modifiers", description="Disable modifiers", default=True
