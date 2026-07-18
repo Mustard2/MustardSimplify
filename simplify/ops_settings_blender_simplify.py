@@ -23,7 +23,6 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
 
     def draw(self, context):
 
-
         scene = context.scene
         settings = scene.MustardSimplify_Settings
 
@@ -33,7 +32,9 @@ class MUSTARDSIMPLIFY_OT_MenuBlenderSimplifySettings(bpy.types.Operator):
         cscene = scene.cycles if hasattr(scene, "cycles") else None
 
         layout.row(align=True).prop(settings, "blender_simplify_engine", expand=True)
-        show_cycles = cscene is not None and settings.blender_simplify_engine == "CYCLES"
+        show_cycles = (
+            cscene is not None and settings.blender_simplify_engine == "CYCLES"
+        )
 
         # Viewport
         box = layout.box()
