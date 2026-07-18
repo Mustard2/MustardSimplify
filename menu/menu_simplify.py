@@ -230,6 +230,7 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                         and settings.culling
                     )
                     row.label(text="", icon="HIDE_OFF")
+                    row.enabled = obj.exception.type == "MESH"
                     row.prop(obj, "culling", text="Cycles Culling")
 
                     if addon_prefs.experimental:
