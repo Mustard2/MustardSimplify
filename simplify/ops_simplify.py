@@ -23,18 +23,17 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         scene = context.scene
         settings = scene.MustardSimplify_Settings
 
-        if not settings.simplify_status:
-            if settings.objects:
-                return settings.objects and settings.modifiers
-            return (
-                settings.blender_simplify
-                or settings.modifiers
-                or settings.shape_keys
-                or settings.physics
-                or settings.drivers
-            )
-        else:
+        if settings.blender_simplify:
             return True
+
+        return (
+            settings.blender_simplify
+            or settings.objects
+            or settings.modifiers
+            or settings.shape_keys
+            or settings.physics
+            or settings.drivers
+        )
 
     def execute(self, context):
 
@@ -147,8 +146,8 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             scene.MustardSimplify_Status.objects.clear()
 
         # Create list of objects to simplify
-        objects_ignore = settings.modifiers
-        if settings.modifiers:
+        objects_ignore = settings.objects
+        if settings.objects:
             chosen_objs = scene.MustardSimplify_SetObjects.objects
 
             # If the user hasn't used the Objects menu, use the default settings
@@ -167,6 +166,16 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                 modifiers_ignore = settings.modifiers_ignore
             else:
                 modifiers_ignore = [x.name for x in chosen_mods if not x.simplify]
+
+        # Culling only makes sense with Cycles, and only if the native Camera/Distance
+        # Culling toggles are already enabled by the user
+        cscene = scene.cycles if hasattr(scene, "cycles") else None
+        culling_enabled = (
+            settings.culling
+            and scene.render.engine == "CYCLES"
+            and cscene is not None
+            and (cscene.use_camera_cull or cscene.use_distance_cull)
+        )
 
         if addon_prefs.debug:
             print("\n ----------- MUSTARD SIMPLIFY LOG -----------")
@@ -253,6 +262,43 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
                                     + str(status)
                                     + "."
                                 )
+
+            # Culling (native Cycles Camera Frustum and Distance Culling)
+            if (
+                culling_enabled
+                and hasattr(obj, "cycles")
+                and (eo.culling if eo is not None else True)
+            ):
+                if self.enable_simplify:
+                    status_cam = obj.cycles.use_camera_cull
+                    status_dist = obj.cycles.use_distance_cull
+                    obj_status.camera_cull = status_cam
+                    obj_status.distance_cull = status_dist
+                    obj.cycles.use_camera_cull = True
+                    obj.cycles.use_distance_cull = True
+                    if addon_prefs.debug:
+                        print(
+                            "Object "
+                            + obj.name
+                            + " Culling enabled (previous camera_cull: "
+                            + str(status_cam)
+                            + ", distance_cull: "
+                            + str(status_dist)
+                            + ")."
+                        )
+                else:
+                    obj.cycles.use_camera_cull = obj_status.camera_cull
+                    obj.cycles.use_distance_cull = obj_status.distance_cull
+                    if addon_prefs.debug:
+                        print(
+                            "Object "
+                            + obj.name
+                            + " Culling reverted (camera_cull: "
+                            + str(obj_status.camera_cull)
+                            + ", distance_cull: "
+                            + str(obj_status.distance_cull)
+                            + ")."
+                        )
 
             # Shape Keys
             if (

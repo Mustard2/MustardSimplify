@@ -85,6 +85,14 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     # Objects
     objects: BoolProperty(name="Objects", description="Hide objects", default=False)
 
+    # Culling
+    culling: BoolProperty(
+        name="Culling",
+        description="Enable Camera Frustum and Distance Culling for all Scene "
+        "objects.\nOnly effective when using Cycles as render engine",
+        default=False,
+    )
+
     # Exceptions
     exception_type: EnumProperty(
         name="Exception",

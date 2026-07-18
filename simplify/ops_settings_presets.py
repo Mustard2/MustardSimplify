@@ -8,6 +8,7 @@ from bl_operators.presets import AddPresetBase
 PRESET_VALUES = [
     "settings.blender_simplify",
     "settings.objects",
+    "settings.culling",
     "settings.modifiers",
     "settings.shape_keys",
     "settings.shape_keys_disable_not_null",
