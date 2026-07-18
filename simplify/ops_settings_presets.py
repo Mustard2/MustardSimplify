@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import bpy
 from bl_operators.presets import AddPresetBase
@@ -44,6 +45,35 @@ CYCLES_TEXTURE_RESOLUTION_PRESET_VALUES = [
 ]
 
 PRESET_SUBDIR = "mustard_simplify/simplify"
+
+# Presets shipped with the addon, copied into the user preset folder on
+# register()
+BUNDLED_PRESET_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "presets",
+    PRESET_SUBDIR,
+)
+
+
+def install_default_presets():
+    if not os.path.isdir(BUNDLED_PRESET_DIR):
+        return
+
+    target_dir = bpy.utils.user_resource(
+        "SCRIPTS", path=os.path.join("presets", PRESET_SUBDIR), create=True
+    )
+    if not target_dir:
+        return
+
+    for filename in os.listdir(BUNDLED_PRESET_DIR):
+        if not filename.endswith(".py"):
+            continue
+
+        target_path = os.path.join(target_dir, filename)
+        if os.path.isfile(target_path):
+            continue
+
+        shutil.copy(os.path.join(BUNDLED_PRESET_DIR, filename), target_path)
 
 
 class MUSTARDSIMPLIFY_MT_SimplifyPresets(bpy.types.Menu):
@@ -161,6 +191,7 @@ class MUSTARDSIMPLIFY_OT_AddSimplifyPreset(AddPresetBase, bpy.types.Operator):
 def register():
     bpy.utils.register_class(MUSTARDSIMPLIFY_MT_SimplifyPresets)
     bpy.utils.register_class(MUSTARDSIMPLIFY_OT_AddSimplifyPreset)
+    install_default_presets()
 
 
 def unregister():
