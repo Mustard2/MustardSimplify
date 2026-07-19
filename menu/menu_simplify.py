@@ -204,10 +204,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     row.prop(obj, "visibility")
 
                     row = col.row()
-                    row.enabled = (
-                        settings.modifiers
-                        and (obj.exception.type == "MESH"
-                        or obj.exception.type == "GPENCIL")
+                    row.enabled = settings.modifiers and (
+                        obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
                     )
                     row.label(text="", icon="MODIFIER")
                     row.prop(obj, "modifiers")
