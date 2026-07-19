@@ -23,7 +23,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
         scene = context.scene
         settings = scene.MustardSimplify_Settings
 
-        if settings.blender_simplify:
+        if settings.simplify_status:
             return True
 
         return (
@@ -33,6 +33,7 @@ class MUSTARDSIMPLIFY_OT_SimplifyScene(bpy.types.Operator):
             or settings.shape_keys
             or settings.physics
             or settings.drivers
+            or settings.culling
         )
 
     def execute(self, context):
