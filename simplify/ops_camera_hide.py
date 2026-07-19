@@ -28,19 +28,16 @@ def is_bbox_in_frustum(obj, planes):
     return True
 
 
+_was_hidden_before_culling = {}
+
+
 def store_objects_visibility():
     for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
-            obj["was_hidden_before_culling"] = obj.hide_viewport
+            _was_hidden_before_culling[obj.name] = obj.hide_viewport
 
 
 def apply_frustum_culling():
-    def find_exception_obj(collection, obj):
-        for el in collection:
-            if el.exception == obj:
-                return el
-        return None
-
     scene = bpy.context.scene
 
     settings = scene.MustardSimplify_Settings
@@ -49,38 +46,38 @@ def apply_frustum_culling():
     if cam_obj is None:
         return
     planes = camera_as_planes(scene, cam_obj)
+
+    exception_map = {e.exception: e for e in scene.MustardSimplify_Exceptions.exceptions}
+
+    exception_collection = settings.exception_collection
+    exception_objs = set()
+    if exception_collection is not None:
+        exception_objs = set(
+            exception_collection.all_objects
+            if settings.exception_include_subcollections
+            else exception_collection.objects
+        )
+
     for obj in [x for x in scene.objects if x and x.type == "MESH"]:
-        exception_collection = settings.exception_collection
-        exception = find_exception_obj(scene.MustardSimplify_Exceptions.exceptions, obj)
-        if (exception is not None and not exception.camera_hide) or (
-            exception_collection is not None
-            and obj
-            in [
-                x
-                for x in (
-                    settings.exception_collection.all_objects
-                    if settings.exception_include_subcollections
-                    else settings.exception_collection.objects
-                )
-            ]
-        ):
+        exception = exception_map.get(obj)
+        if (exception is not None and not exception.camera_hide) or obj in exception_objs:
             continue
-        was_hidden_before = obj.get("was_hidden_before_culling", False)
+        was_hidden_before = _was_hidden_before_culling.get(obj.name, False)
         if was_hidden_before and not obj.hide_viewport:
             obj.hide_viewport = True
-        elif not was_hidden_before and not obj.hide_viewport == (
-            not is_bbox_in_frustum(obj, planes)
-        ):
-            obj.hide_viewport = not is_bbox_in_frustum(obj, planes)
+        elif not was_hidden_before:
+            in_frustum = is_bbox_in_frustum(obj, planes)
+            if obj.hide_viewport == in_frustum:
+                obj.hide_viewport = not in_frustum
 
 
 def restore_objects_visibility():
     for obj in bpy.context.scene.objects:
         if obj.type == "MESH":
-            was_hidden = obj.get("was_hidden_before_culling")
+            was_hidden = _was_hidden_before_culling.pop(obj.name, None)
             if was_hidden is not None:
                 obj.hide_viewport = was_hidden
-                del obj["was_hidden_before_culling"]
+    _was_hidden_before_culling.clear()
 
 
 class MUSTARDSIMPLIFY_OT_CameraHideModel(bpy.types.Operator):
