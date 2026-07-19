@@ -48,7 +48,9 @@ def apply_frustum_culling():
         return
     planes = camera_as_planes(scene, cam_obj)
 
-    exception_map = {e.exception: e for e in scene.MustardSimplify_Exceptions.exceptions}
+    exception_map = {
+        e.exception: e for e in scene.MustardSimplify_Exceptions.exceptions
+    }
 
     exception_collection = settings.exception_collection
     exception_objs = set()
@@ -63,7 +65,9 @@ def apply_frustum_culling():
         if not obj or obj.type != "MESH":
             continue
         exception = exception_map.get(obj)
-        if (exception is not None and not exception.camera_hide) or obj in exception_objs:
+        if (
+            exception is not None and not exception.camera_hide
+        ) or obj in exception_objs:
             continue
         was_hidden_before = _was_hidden_before_culling.get(obj.name, False)
         if was_hidden_before and not obj.hide_viewport:
