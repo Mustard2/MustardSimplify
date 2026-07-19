@@ -28,10 +28,6 @@ def is_bbox_in_frustum(obj, planes):
     return True
 
 
-# Runtime-only cache of the visibility each mesh object had before culling was
-# enabled, keyed by object name. Kept out of ID properties so every read/write
-# during the live culling timer is a plain dict access instead of a (slower)
-# custom-property access that also flags the object as changed.
 _was_hidden_before_culling = {}
 
 
