@@ -31,6 +31,15 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
     blender_simplify: BoolProperty(
         name="Blender Simplify", description="Enable Blender Simplify", default=True
     )
+    blender_simplify_engine: EnumProperty(
+        name="Engine",
+        description="Render engine whose Simplify settings should be shown",
+        default="CYCLES",
+        items=(
+            ("EEVEE", "Eevee", "Show Eevee Simplify settings", "SHADING_RENDERED", 0),
+            ("CYCLES", "Cycles", "Show Cycles Simplify settings", "SCENE", 1),
+        ),
+    )
     # Modifiers
     modifiers: BoolProperty(
         name="Modifiers", description="Disable modifiers", default=True
@@ -75,6 +84,14 @@ class MustardSimplify_Settings(bpy.types.PropertyGroup):
 
     # Objects
     objects: BoolProperty(name="Objects", description="Hide objects", default=False)
+
+    # Culling
+    culling: BoolProperty(
+        name="Culling",
+        description="Enable Camera Frustum and Distance Culling for all Scene "
+        "objects.\nOnly effective when using Cycles as render engine",
+        default=False,
+    )
 
     # Exceptions
     exception_type: EnumProperty(

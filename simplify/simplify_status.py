@@ -21,6 +21,10 @@ class MustardSimplify_ObjectStatus(bpy.types.PropertyGroup):
     # Object visibility status
     visibility: bpy.props.BoolProperty(default=True)
 
+    # Culling status (previous per-object Camera/Distance Culling values)
+    camera_cull: bpy.props.BoolProperty(default=False)
+    distance_cull: bpy.props.BoolProperty(default=False)
+
     # Modifiers status
     modifiers: bpy.props.CollectionProperty(type=MustardSimplify_ModifierStatus)
     # Shape Keys status
@@ -59,6 +63,11 @@ class MustardSimplify_Exception(bpy.types.PropertyGroup):
     )
     camera_hide: bpy.props.BoolProperty(
         name="Camera Hide", description="Apply the Camera Hide operation", default=False
+    )
+    culling: bpy.props.BoolProperty(
+        name="Culling",
+        description="Enable Camera Frustum and Distance Culling on this Object",
+        default=False,
     )
 
 

@@ -378,9 +378,10 @@ def _enable_overlay():
         _draw_handle = bpy.types.SpaceView3D.draw_handler_add(
             _draw_callback, (), "WINDOW", "POST_PIXEL"
         )
-    for area in bpy.context.screen.areas:
-        if area.type == "VIEW_3D":
-            area.tag_redraw()
+    if bpy.context.screen is not None:
+        for area in bpy.context.screen.areas:
+            if area.type == "VIEW_3D":
+                area.tag_redraw()
 
 
 def _disable_overlay():
@@ -391,9 +392,10 @@ def _disable_overlay():
         except Exception:
             pass
         _draw_handle = None
-    for area in bpy.context.screen.areas:
-        if area.type == "VIEW_3D":
-            area.tag_redraw()
+    if bpy.context.screen is not None:
+        for area in bpy.context.screen.areas:
+            if area.type == "VIEW_3D":
+                area.tag_redraw()
 
 
 # ---------------------- Operators ----------------------

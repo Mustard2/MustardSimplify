@@ -81,15 +81,24 @@ class MUSTARDSIMPLIFY_PT_Simplify_Options(MainPanel, bpy.types.Panel):
             "mustard_simplify.add_simplify_preset", text="", icon="REMOVE"
         ).remove_active = True
 
-        row = layout.row()
-        col = row.column()
+        col = layout.column(align=True)
+        row = col.row()
         row.enabled = not settings.simplify_status
-        col.prop(settings, "blender_simplify")
+        row.prop(settings, "blender_simplify")
         row.operator(
             "mustard_simplify.menu_blender_simplify_settings",
             icon="PREFERENCES",
             text="",
         )
+
+        cscene = scene.cycles if hasattr(scene, "cycles") else None
+        row = col.row()
+        row.enabled = not settings.simplify_status and (
+            scene.render.engine == "CYCLES"
+            and cscene is not None
+            and (cscene.use_camera_cull or cscene.use_distance_cull)
+        )
+        row.prop(settings, "culling", text="Cycles Culling")
 
         col = layout.column(align=True)
         col.enabled = not settings.simplify_status
@@ -141,6 +150,8 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
         row.prop(settings, "exception_type", expand=True)
         row.enabled = not settings.simplify_status
 
+        cscene = scene.cycles if hasattr(scene, "cycles") else None
+
         if settings.exception_type == "OBJECT":
             row = layout.row()
             row.enabled = not settings.simplify_status
@@ -188,27 +199,42 @@ class MUSTARDSIMPLIFY_PT_Simplify_Exceptions(MainPanel, bpy.types.Panel):
                     col = box.column(align=True)
 
                     row = col.row()
+                    row.enabled = settings.objects
+                    row.label(text="", icon="RESTRICT_VIEW_OFF")
                     row.prop(obj, "visibility")
 
                     row = col.row()
-                    row.enabled = (
+                    row.enabled = settings.modifiers and (
                         obj.exception.type == "MESH" or obj.exception.type == "GPENCIL"
                     )
+                    row.label(text="", icon="MODIFIER")
                     row.prop(obj, "modifiers")
-                    row.enabled = settings.modifiers
 
                     row = col.row()
-                    row.enabled = obj.exception.type == "MESH"
+                    row.enabled = obj.exception.type == "MESH" and settings.shape_keys
+                    row.label(text="", icon="SHAPEKEY_DATA")
                     row.prop(obj, "shape_keys")
-                    row.enabled = settings.shape_keys
 
                     row = col.row()
-                    row.prop(obj, "drivers")
                     row.enabled = settings.drivers
+                    row.label(text="", icon="DRIVER")
+                    row.prop(obj, "drivers")
+
+                    row = col.row()
+                    row.enabled = not settings.simplify_status and (
+                        obj.exception.type == "MESH"
+                        and scene.render.engine == "CYCLES"
+                        and cscene is not None
+                        and (cscene.use_camera_cull or cscene.use_distance_cull)
+                        and settings.culling
+                    )
+                    row.label(text="", icon="HIDE_OFF")
+                    row.prop(obj, "culling", text="Cycles Culling")
 
                     if addon_prefs.experimental:
                         row = col.row()
                         row.enabled = obj.exception.type == "MESH"
+                        row.label(text="", icon="CAMERA_DATA")
                         row.prop(obj, "camera_hide")
 
         else:

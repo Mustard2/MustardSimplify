@@ -137,9 +137,11 @@ class MUSTARDSIMPLIFY_UL_Exceptions_UIList(bpy.types.UIList):
         draw_icon(row, "COLLECTION_COLOR_01", item_in_exception_collection)
         # the 'AND' condition here is to not draw icons for the disabled settings if
         # the global one is disabled
+        draw_icon(row, "RESTRICT_VIEW_OFF", item.visibility and settings.objects)
         draw_icon(row, "MODIFIER", item.modifiers and settings.modifiers)
         draw_icon(row, "SHAPEKEY_DATA", item.shape_keys and settings.shape_keys)
         draw_icon(row, "DRIVER", item.drivers and settings.drivers)
+        draw_icon(row, "HIDE_OFF", item.culling and settings.culling)
 
 
 def register():
